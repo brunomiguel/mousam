@@ -15,7 +15,8 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib, Adw
+import threading
 
 from .constants import icons
 from .config import settings
@@ -178,14 +179,42 @@ class Forecast(Gtk.Grid):
         Args:
             page: The ForecastPage enum value to load.
         """
-        # Import data modules lazily to avoid circular imports
-        daily_forecast_data = fetch_daily_forecast()
-        hourly_forecast_data = fetch_hourly_forecast()
-
         page_name = page.name.lower()
-        container = Gtk.Box(margin_top=0, margin_bottom=0)
+        
+        # Main container for the page
+        container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self._forecast_stack.add_named(container, page_name)
         self._forecast_stack.set_visible_child_name(page_name)
+
+        # Spinner for loading state
+        spinner = Adw.Spinner(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, hexpand=True, vexpand=True)
+        spinner.set_size_request(32, 32)
+        spinner.set_margin_top(20)
+        container.append(spinner)
+
+        def _fetch_data():
+            try:
+                # Import data modules lazily to avoid circular imports
+                daily_data = fetch_daily_forecast()
+                hourly_data = fetch_hourly_forecast()
+                GLib.idle_add(self._on_data_loaded, page, container, spinner, daily_data, hourly_data)
+            except Exception as e:
+                print(f"Error loading forecast data: {e}")
+                # Handle error UI if needed
+
+        threading.Thread(target=_fetch_data, daemon=True).start()
+
+    def _on_data_loaded(
+        self,
+        page: ForecastPage,
+        container: Gtk.Box,
+        spinner: Adw.Spinner,
+        daily_forecast_data: Any,
+        hourly_forecast_data: Any,
+    ) -> None:
+        """Callback to populate the UI once data is fetched."""
+        # Remove spinner
+        container.remove(spinner)
 
         # Scrolled window for vertical scrolling
         scrolled = Gtk.ScrolledWindow(margin_top=4, margin_bottom=4)

@@ -2,7 +2,8 @@ import datetime
 import random
 import time
 import gi
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib, Adw
+import threading
 from gettext import gettext as _, pgettext as C_
 
 from .constants import icons, icon_loc
@@ -29,7 +30,7 @@ class HourlyDetails(Gtk.Grid):
         self.set_margin_start(3)
         self.paint_ui()
         self.daily_forecast = None
-        self.scrolled_window
+        self.scrolled_window = None
 
     def paint_ui(self):
         # Hourly Stack
@@ -76,11 +77,34 @@ class HourlyDetails(Gtk.Grid):
 
     # ---------- Create page stack --------------
     def create_stack_page(self, page_name):
-        from .CORE_weatherData import hourly_forecast_data as hourly_data
+        """Create a new page in the hourly stack with a loading indicator."""
+        container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.hourly_stack.add_named(container, page_name)
+        self.hourly_stack.set_visible_child_name(page_name)
+
+        # Spinner for loading state
+        spinner = Adw.Spinner(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, hexpand=True, vexpand=True)
+        spinner.set_size_request(32, 32)
+        spinner.set_margin_top(32)
+        spinner.set_margin_bottom(32)
+        container.append(spinner)
+
+        def _fetch_data():
+            try:
+                from .CORE_weatherData import fetch_hourly_forecast
+                hourly_data = fetch_hourly_forecast()
+                GLib.idle_add(self._on_data_loaded, page_name, container, spinner, hourly_data)
+            except Exception as e:
+                print(f"Error loading hourly details: {e}")
+
+        threading.Thread(target=_fetch_data, daemon=True).start()
+
+    def _on_data_loaded(self, page_name, container, spinner, hourly_data):
+        """Callback to build the UI once data is fetched."""
+        container.remove(spinner)
 
         page_grid = Gtk.Grid()
-        self.hourly_stack.add_named(page_grid, page_name)
-        self.hourly_stack.set_visible_child_name(page_name)
+        container.append(page_grid)
 
         info_grid = Gtk.Grid(
             margin_start=10, margin_top=22, margin_bottom=5, column_spacing=5

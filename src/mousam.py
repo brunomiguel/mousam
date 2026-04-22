@@ -336,9 +336,8 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         self.main_stack.set_visible_child_name(state)
 
     def _create_loader_page(self):
-        spinner = Gtk.Spinner()
+        spinner = Adw.Spinner()
         spinner.set_size_request(64, 64)
-        spinner.start()
         page = Adw.StatusPage()
         page.set_title(_("Getting Weather Data"))
         page.set_child(spinner)

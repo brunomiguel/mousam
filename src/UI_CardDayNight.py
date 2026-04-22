@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import gi
 
 from gi.repository import Gtk
@@ -17,10 +18,11 @@ gi.require_version("Adw", "1")
 
 class CardDayNight:
     def __init__(self):
-        sun_rise, sun_set, degree = self.get_sunset_sunrise_degree()
+        sun_rise, sun_set, degree, current_time = self.get_sunset_sunrise_degree()
         self.sun_rise = sun_rise
         self.sun_set = sun_set
         self.degree = degree
+        self.current_time = current_time
 
         self.card = None
         self.create_card()
@@ -29,20 +31,22 @@ class CardDayNight:
         from .CORE_weatherData import daily_forecast_data as daily_data
 
         t_data = get_time_difference()
-        time_diff = t_data.get("epoch_diff")
         target_time = t_data.get("target_time")
+        timezone_str = t_data.get("timezone", "UTC")
+        tz = ZoneInfo(timezone_str)
 
         sunrise_ts, sunset_ts = 0, 0
         for i, data in enumerate(daily_data.time.get("data")):
-            date_ = int(datetime.fromtimestamp(data + time_diff).strftime(r"%d"))
-            if date_ == datetime.today().date().day:
+            # Check date using target timezone
+            date_ = int(datetime.fromtimestamp(data, tz=tz).strftime(r"%d"))
+            if date_ == datetime.now(tz).date().day:
                 sunrise_ts = daily_data.sunrise.get("data")[i]
                 sunset_ts = daily_data.sunset.get("data")[i]
                 break
 
-        target_dt = datetime.fromtimestamp(target_time)
-        sunrise_dt = datetime.fromtimestamp(sunrise_ts - time_diff)
-        sunset_dt = datetime.fromtimestamp(sunset_ts - time_diff)
+        target_dt = datetime.fromtimestamp(target_time, tz=tz)
+        sunrise_dt = datetime.fromtimestamp(sunrise_ts, tz=tz)
+        sunset_dt = datetime.fromtimestamp(sunset_ts, tz=tz)
 
         sunrise = sunrise_dt.strftime("%I:%M %p")
         sunset = sunset_dt.strftime("%I:%M %p")
@@ -52,7 +56,12 @@ class CardDayNight:
             sunset = sunset_dt.strftime("%H:%M")
 
         angle = self._calculate_sun_rotation(target_dt, sunrise_dt, sunset_dt)
-        return sunrise, sunset, angle
+        
+        current_time = target_dt.strftime("%I:%M %p")
+        if settings.is_using_24h_clock:
+            current_time = target_dt.strftime("%H:%M")
+            
+        return sunrise, sunset, angle, current_time
 
     def create_card(self):
         card = Gtk.Grid(margin_top=6, margin_start=3, margin_bottom=0)
@@ -107,7 +116,7 @@ class CardDayNight:
 
         card.attach(card_icon, 1, 2, 2, 1)
 
-        obj = DrawDayNight(self.degree, 120, 90)
+        obj = DrawDayNight(self.degree, self.current_time, 120, 90)
         card_icon.attach(obj.img_box, 0, 1, 1, 1)
 
     # Sun Rotation
