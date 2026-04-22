@@ -19,7 +19,7 @@ from gi.repository import Adw
 # Cache for internet connection status
 # ----------------------------------------------------------------------
 INTERNET_CACHE_TTL = 120  # seconds
-DATA_CACHE_TTL = 0
+DATA_CACHE_TTL =60
 DATA_MAX_ENTRIES = 128
 DEFAULT_TIMEZONE = "UTC"
 _internet_cache = {"timestamp": 0.0, "status": False}

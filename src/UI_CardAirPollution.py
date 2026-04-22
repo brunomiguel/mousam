@@ -86,6 +86,41 @@ class CardAirPollution:
         info_button.set_tooltip_text(_("Air Quality Components"))
         card.attach(info_button, 3, 0, 1, 2)
 
+        popover = self._create_popover(idx)
+        info_button.set_popover(popover)
+
+        # Main value (like windspeed = 32km/h)
+        info_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, hexpand=True, halign=Gtk.Align.START
+        )
+        card.attach(info_box, 0, 2, 4, 2)
+        info_box.set_margin_start(10)
+        info_box.set_margin_top(10)
+
+        main_val = Gtk.Label(label=self.air_apllution_data["hourly"]["us_aqi"][idx])
+        main_val.set_css_classes(["text-l4", "bold"])
+        main_val.set_halign(Gtk.Align.START)
+        main_val.set_margin_end(10)
+        info_box.append(main_val)
+
+        desc = Gtk.Label(
+            label=self.classify_aqi(self.air_apllution_data["hourly"]["us_aqi"][idx])
+        )
+        desc.set_css_classes(["text-3", "light-2", "bold-2"])
+        desc.set_margin_bottom(0)
+        desc.set_valign(Gtk.Align.END)
+        desc.set_halign(Gtk.Align.START)
+        info_box.append(desc)
+
+        # Pollution bar
+        aqi = self.air_apllution_data["hourly"]["us_aqi"][idx]
+
+        bar_level = aqi / 350
+        pollution_bar = PollutionBar(min(bar_level, 0.99))
+        # pollution_bar.set_margin_top()
+        card.attach(pollution_bar, 0, 4, 4, 1)
+
+    def _create_popover(self, idx):
         # Popover content
         popover = Gtk.Popover()
         popover_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -141,67 +176,36 @@ class CardAirPollution:
         for key, name in pollutants:
             if key in self.air_apllution_data["hourly"]:
                 val = self.air_apllution_data["hourly"][key][idx]
-                
+
                 # Skip if value is not available for the current hour
                 if val is None:
                     continue
 
                 unit = self.air_apllution_data["hourly_units"].get(key, "μg/m³")
                 color_class = self._get_pollutant_status_color(key, val)
-                
+
                 row = Adw.ActionRow(title=name)
-                
+
                 # Indicator dot
                 indicator = Gtk.Image.new_from_icon_name("media-record-symbolic")
                 indicator.add_css_class(color_class)
                 indicator.set_pixel_size(8)
                 row.add_prefix(indicator)
-                
+
                 # Value label
                 val_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
                 val_label = Gtk.Label(label=str(val))
                 val_label.add_css_class("bold")
-                
+
                 unit_label = Gtk.Label(label=unit)
                 unit_label.add_css_class("dim-label")
                 unit_label.add_css_class("text-8")
-                
+
                 val_box.append(val_label)
                 val_box.append(unit_label)
                 row.add_suffix(val_box)
-                
+
                 list_box.append(row)
 
         popover.set_child(popover_content)
-        info_button.set_popover(popover)
-
-        # Main value (like windspeed = 32km/h)
-        info_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL, hexpand=True, halign=Gtk.Align.START
-        )
-        card.attach(info_box, 0, 2, 4, 2)
-        info_box.set_margin_start(10)
-        info_box.set_margin_top(15)
-
-        main_val = Gtk.Label(label=self.air_apllution_data["hourly"]["us_aqi"][idx])
-        main_val.set_css_classes(["text-l4", "bold"])
-        main_val.set_halign(Gtk.Align.START)
-        main_val.set_margin_end(10)
-        info_box.append(main_val)
-
-        desc = Gtk.Label(
-            label=self.classify_aqi(self.air_apllution_data["hourly"]["us_aqi"][idx])
-        )
-        desc.set_css_classes(["text-3", "light-2", "bold-2"])
-        desc.set_margin_bottom(10)
-        desc.set_valign(Gtk.Align.END)
-        desc.set_halign(Gtk.Align.START)
-        info_box.append(desc)
-
-        # Pollution bar
-        aqi = self.air_apllution_data["hourly"]["us_aqi"][idx]
-
-        bar_level = aqi / 350
-        pollution_bar = PollutionBar(min(bar_level, 0.99))
-        # pollution_bar.set_margin_top()
-        card.attach(pollution_bar, 0, 4, 4, 1)
+        return popover

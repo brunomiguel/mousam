@@ -110,7 +110,7 @@ class LineGraph:
         ctx.set_font_size(9)
         ctx.set_source_rgba(1, 1, 1, 0.5)
         max_text = f"MAX: {int(max_val)}"
-        ctx.move_to(padding_left, padding_top + 10)
+        ctx.move_to(padding_left, padding_top + 5)
         ctx.show_text(max_text)
 
         # Min label
