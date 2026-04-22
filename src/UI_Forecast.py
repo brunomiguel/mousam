@@ -55,7 +55,7 @@ class Forecast(Gtk.Grid):
     ITEM_WIDTH_REQUEST: int = 120
     ITEM_HEIGHT_REQUEST: int = 16
     SCROLLED_WINDOW_WIDTH: int = 220
-    SCROLLED_WINDOW_HEIGHT: int = 480
+    SCROLLED_WINDOW_HEIGHT: int = 484
     ICON_SIZE: int = 50
     FORECAST_ITEM_MARGIN: int = 6
     LABEL_BOX_WIDTH: int = 80
@@ -106,6 +106,7 @@ class Forecast(Gtk.Grid):
             orientation=Gtk.Orientation.VERTICAL,
             hexpand=True,
             halign=Gtk.Align.CENTER,
+            # vexpand=True
         )
         self.attach(top_bar, 0, 0, 1, 1)
 
@@ -183,13 +184,14 @@ class Forecast(Gtk.Grid):
         
         # Main container for the page
         container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        container.set_size_request(-1, self.SCROLLED_WINDOW_HEIGHT)
         self._forecast_stack.add_named(container, page_name)
         self._forecast_stack.set_visible_child_name(page_name)
 
         # Spinner for loading state
-        spinner = Adw.Spinner(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, hexpand=True, vexpand=True)
+        spinner = Adw.Spinner(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, hexpand=True)
         spinner.set_size_request(32, 32)
-        spinner.set_margin_top(20)
+        spinner.set_margin_top(self.SCROLLED_WINDOW_HEIGHT // 2)
         container.append(spinner)
 
         def _fetch_data():
@@ -217,7 +219,7 @@ class Forecast(Gtk.Grid):
         container.remove(spinner)
 
         # Scrolled window for vertical scrolling
-        scrolled = Gtk.ScrolledWindow(margin_top=4, margin_bottom=4)
+        scrolled = Gtk.ScrolledWindow(margin_top=4, margin_bottom=4,hexpand=True)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_size_request(self.SCROLLED_WINDOW_WIDTH, self.SCROLLED_WINDOW_HEIGHT)
         scrolled.set_kinetic_scrolling(True)
@@ -340,7 +342,7 @@ class Forecast(Gtk.Grid):
 
     def _add_placeholder_column(self, grid: Gtk.Grid) -> None:
         """Add an empty placeholder column (col 2) for layout balance."""
-        placeholder = Gtk.Grid(valign=Gtk.Align.CENTER, margin_end=20)
+        placeholder = Gtk.Grid(valign=Gtk.Align.CENTER, margin_end=0)
         grid.attach(placeholder, 2, 0, 1, 1)
 
     def _add_temperature_column(
