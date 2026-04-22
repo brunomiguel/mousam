@@ -2,7 +2,8 @@ import datetime
 import random
 import time
 import gi
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib, Adw
+import threading
 from gettext import gettext as _, pgettext as C_
 
 from .constants import icons, icon_loc
@@ -30,11 +31,10 @@ class HourlyDetails(Gtk.Grid):
         self._signal_handlers = []  # [(widget, handler_id)] for cleanup
         self.paint_ui()
         self.daily_forecast = None
-        self.scrolled_window
+        self.scrolled_window = None
 
     def paint_ui(self):
         # Hourly Stack
-
         self.hourly_stack = Gtk.Stack.new()
         self.hourly_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self.attach(self.hourly_stack, 0, 1, 1, 1)
@@ -66,214 +66,241 @@ class HourlyDetails(Gtk.Grid):
             hid = button.connect("clicked", self._on_btn_clicked, page_name)
             self._signal_handlers.append((button, hid))
 
-        first_btn.do_clicked(first_btn)
+        # Initialize with first tab
+        if first_btn:
+            first_btn.set_active(True)
+            self.create_stack_page("hourly")
+        
         tab_box.append(style_buttons_box)
-        self.create_stack_page("hourly")
 
     def _on_btn_clicked(self, widget, page_name):
-        if self.hourly_stack.get_child_by_name(page_name):
-            self.hourly_stack.set_visible_child_name(page_name)
-        else:
-            self.create_stack_page(page_name)
+        if widget.get_active():
+            if self.hourly_stack.get_child_by_name(page_name):
+                self.hourly_stack.set_visible_child_name(page_name)
+            else:
+                self.create_stack_page(page_name)
 
-    # ---------- Create page stack --------------
     def create_stack_page(self, page_name):
-        from .CORE_weatherData import hourly_forecast_data as hourly_data
-
-        page_grid = Gtk.Grid()
-        self.hourly_stack.add_named(page_grid, page_name)
+        """Create a new page in the hourly stack with a loading indicator."""
+        container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        container.set_size_request(-1, 180)
+        self.hourly_stack.add_named(container, page_name)
         self.hourly_stack.set_visible_child_name(page_name)
 
-        info_grid = Gtk.Grid(
-            margin_start=10, margin_top=22, margin_bottom=5, column_spacing=5
-        )
-        info_grid.set_css_classes(["card_infos"])
+        spinner = Adw.Spinner(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, hexpand=True)
+        spinner.set_size_request(32, 32)
+        spinner.set_margin_top(80)
+        container.append(spinner)
+
+        def _fetch_data():
+            try:
+                from .CORE_weatherData import fetch_hourly_forecast
+                hourly_data = fetch_hourly_forecast()
+                GLib.idle_add(self._on_data_loaded, page_name, container, spinner, hourly_data)
+            except Exception as e:
+                print(f"Error loading hourly details: {e}")
+
+        threading.Thread(target=_fetch_data, daemon=True).start()
+
+    def _on_data_loaded(self, page_name, container, spinner, hourly_data):
+        """Callback to build the UI once data is fetched."""
+        container.remove(spinner)
+
+        page_grid = Gtk.Grid()
+        container.append(page_grid)
+
+        # Build Info Header
+        info_grid = self._build_info_header(page_name, hourly_data)
         page_grid.attach(info_grid, 0, 1, 1, 1)
 
-        desc_label = Gtk.Label(label=C_("wind", "Day High •"))
-        desc_label.set_css_classes(["text-4", "light-3", "bold-3"])
-        info_grid.attach(desc_label, 0, 0, 1, 2)
+        # Build Scrolled List
+        scrolled_window = self._build_hourly_list(page_name, hourly_data)
+        page_grid.attach(scrolled_window, 0, 2, 1, 1)
 
-        val_label = Gtk.Label(
-            label=str(max(hourly_data.windspeed_10m.get("data")[:24])),
-            halign=Gtk.Align.START,
-        )
-        val_label.set_css_classes(["text-3", "light-3", "bold-1"])
-        info_grid.attach(val_label, 1, 0, 2, 2)
-        unit_label = Gtk.Label(label=hourly_data.windspeed_10m.get("unit"))
-        unit_label.set_css_classes(["text-5", "light-2", "bold-3"])
-        info_grid.attach(unit_label, 3, 0, 1, 2)
+    def _build_info_header(self, page_name, hourly_data):
+        """Builds the top info grid with highlights (Day Max/High)."""
+        info_grid = Gtk.Grid(margin_start=10, margin_top=20, margin_bottom=5, column_spacing=5)
+        info_grid.set_css_classes(["card_infos"])
 
-        # Hourly Page
+        self.desc_label = Gtk.Label()
+        self.desc_label.set_css_classes(["text-4", "light-3", "bold-3"])
+        info_grid.attach(self.desc_label, 0, 0, 1, 2)
+
+        self.val_label = Gtk.Label(halign=Gtk.Align.START)
+        self.val_label.set_css_classes(["text-3", "light-3", "bold-1"])
+        info_grid.attach(self.val_label, 1, 0, 2, 2)
+
+        self.unit_label = Gtk.Label()
+        self.unit_label.set_css_classes(["text-5", "light-2", "bold-3"])
+        info_grid.attach(self.unit_label, 3, 0, 1, 2)
+
+        # Dispatch to specialized header builders
         if page_name == "hourly":
-            desc_label.set_text(C_("temperature", "Day Max •"))
-            val_label.set_text(str(max(hourly_data.temperature_2m.get("data")[:24])) + "°")
-            unit_label.set_text("")
+            self._setup_temp_header(hourly_data)
+        elif page_name == "wind":
+            self._setup_wind_header(hourly_data)
+        elif page_name == "prec":
+            self._setup_prec_header(hourly_data)
 
-        # Precipitation page
+        return info_grid
+
+    def _setup_temp_header(self, hourly_data):
+        self.desc_label.set_text(C_("temperature", "Day Max •"))
+        max_temp = max(hourly_data.temperature_2m.get('data')[:24])
+        self.val_label.set_text(f"{max_temp}°")
+        self.unit_label.set_text("")
+
+    def _setup_wind_header(self, hourly_data):
+        self.desc_label.set_text(C_("wind", "Day High •"))
+        max_wind = max(hourly_data.windspeed_10m.get("data")[:24])
+        self.val_label.set_text(str(max_wind))
+        self.unit_label.set_text(hourly_data.windspeed_10m.get("unit"))
+
+    def _setup_prec_header(self, hourly_data):
         max_prec = max(hourly_data.precipitation.get("data")[:24])
         unit = hourly_data.precipitation.get("unit")
         if settings.is_using_inch_for_prec:
-            max_prec = max_prec / 25.4
+            max_prec /= 25.4
             unit = "inch"
+        self.desc_label.set_text(C_("precipitation", "Day High •"))
+        self.val_label.set_text(f"{max_prec:.2f}")
+        self.unit_label.set_text(unit)
 
-        if page_name == "prec":
-            desc_label.set_text(C_("precipitation", "Day High •"))
-            val_label.set_text(f"{max_prec:.2f}")
-            unit_label.set_text(unit)
-
-        scrolled_window = Gtk.ScrolledWindow(
-            hexpand=True, halign=Gtk.Align.FILL, margin_top=2
-        )
-        self.scrolled_window = scrolled_window
+    def _build_hourly_list(self, page_name, hourly_data):
+        """Builds the horizontally scrollable list of hourly items."""
+        scrolled_window = Gtk.ScrolledWindow(hexpand=True, margin_top=4, margin_bottom=4)
         scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
         scrolled_window.set_kinetic_scrolling(True)
-        page_grid.attach(scrolled_window, 0, 2, 1, 1)
+        self.scrolled_window = scrolled_window
 
         controller = Gtk.EventControllerScroll.new(Gtk.EventControllerScrollFlags.BOTH_AXES)
         scrolled_window.add_controller(controller)
         hid = controller.connect("scroll", self.on_scroll)
         self._signal_handlers.append((controller, hid))
 
-        graphic_container = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
-            halign=Gtk.Align.FILL,
-            margin_top=0,
-            margin_bottom=0,
-        )
-
+        graphic_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         scrolled_window.set_child(graphic_container)
 
-        hourly_forecast_time_list = hourly_data.time.get("data")
-        nearest_current_time_idx = 0
-        for i in range(len(hourly_forecast_time_list)):
-            if (abs(time.time() - hourly_forecast_time_list[i]) // 60) < 30:
-                nearest_current_time_idx = i
-                break
+        if page_name == "prec" and sum(hourly_data.precipitation.get("data")[:24]) == 0:
+            graphic_container.append(self._create_empty_prec_widget())
+            return scrolled_window
 
-        if page_name == "prec":
-            total_sum = sum(hourly_data.precipitation.get("data")[:24])
-            if total_sum == 0:
-                graphic_box = Gtk.Box(
-                    orientation=Gtk.Orientation.VERTICAL,
-                    margin_start=3,
-                    margin_end=3,
-                    halign=Gtk.Align.FILL,
-                    hexpand=True,
-                )
-
-                no_prec_labels = [
-                    _("No precipitation today !"),
-                    _("No precipitation expected today!"),
-                    _("Anticipate a precipitation-free day !"),
-                    _("Enjoy a rain-free day today!"),
-                    _("Umbrella status: resting. No precipitation in sight !"),
-                    _("No rain in sight today!"),
-                ]
-                no_prec_label = Gtk.Label(
-                    label=no_prec_labels[random.randint(0, len(no_prec_labels) - 1)]
-                )
-                no_prec_label.set_css_classes(["text-3a", "bold-3", "light-2"])
-                no_prec_label.set_halign(Gtk.Align.CENTER)
-                no_prec_label.set_margin_top(40)
-                no_prec_label.set_margin_bottom(40)
-                graphic_box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
-                graphic_box.append(no_prec_label)
-                graphic_container.append(graphic_box)
-                return
+        nearest_idx = self._get_nearest_time_index(hourly_data.time.get("data"))
+        max_prec = max(hourly_data.precipitation.get("data")[:24]) if page_name == "prec" else 0
 
         for i in range(24):
-            graphic_box = Gtk.Box(
-                orientation=Gtk.Orientation.VERTICAL, margin_start=4, margin_end=4
-            )
-            graphic_box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
+            item = self._create_hour_item(page_name, i, hourly_data, nearest_idx, max_prec)
+            graphic_container.append(item)
 
-            graphic_container.append(graphic_box)
+        GLib.idle_add(self._scroll_to_now, scrolled_window, graphic_container, nearest_idx)
+        return scrolled_window
 
-            label_timestamp = Gtk.Label()
-            label_timestamp.set_css_classes(["text-7", "bold-2", "light-6"])
-            time_stamp = datetime.datetime.fromtimestamp(
-                hourly_data.time.get("data")[i]
-            )
-            time_label = time_stamp.strftime("%I:%M %p")
-            if settings.is_using_24h_clock:
-                time_label = time_stamp.strftime("%H:%M")
-            label_timestamp.set_text(time_label)
+    def _create_hour_item(self, page_name, index, hourly_data, nearest_idx, max_prec):
+        """Factory method for creating an hour card."""
+        item_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=4, margin_end=4)
+        item_box.set_size_request(-1, 120)
+        item_box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
 
-            if i == nearest_current_time_idx:
-                label_timestamp.set_text(_("Now"))
-                label_timestamp.set_css_classes(["bold-1"])
-                graphic_box.set_css_classes(
-                    ["custom_card_hourly", "custom_card_hourly_now"]
-                )
+        # Add time label
+        self._add_time_label(item_box, index, hourly_data, nearest_idx)
 
-            graphic_box.append(label_timestamp)
+        # Add visual and value components
+        icon_box = Gtk.Box(halign=Gtk.Align.CENTER)
+        item_box.append(icon_box)
+        
+        val_label = Gtk.Label()
+        val_label.set_css_classes(["text-5", "bold-2", "light-3"])
+        item_box.append(val_label)
 
-            icon_box = Gtk.Box(halign=Gtk.Align.CENTER)
-            graphic_box.append(icon_box)
+        # Specialized setup
+        if page_name == "hourly":
+            self._setup_temp_item(icon_box, val_label, index, hourly_data)
+        elif page_name == "wind":
+            self._setup_wind_item(icon_box, val_label, index, hourly_data)
+        elif page_name == "prec":
+            self._setup_prec_item(icon_box, val_label, index, hourly_data, max_prec)
 
-            label_val = Gtk.Label()
-            label_val.set_css_classes(["text-5", "bold-2", "light-3"])
-            graphic_box.append(label_val)
+        return item_box
 
-            if page_name == "wind":
-                label_val.set_text(str(hourly_data.windspeed_10m.get("data")[i]))
-                label_val.set_margin_top(10)
+    def _add_time_label(self, box, index, hourly_data, nearest_idx):
+        ts = hourly_data.time.get("data")[index]
+        dt = datetime.datetime.fromtimestamp(ts)
+        time_str = dt.strftime("%H:%M") if settings.is_using_24h_clock else dt.strftime("%I:%M %p")
+        
+        label = Gtk.Label(label=time_str)
+        label.set_css_classes(["text-7", "bold-2", "light-6"])
+        if index == nearest_idx:
+            label.set_text(_("Now"))
+            label.add_css_class("bold-1")
+            box.add_css_class("custom_card_hourly_now")
+        box.append(label)
 
-                img = DrawImage(
-                    icon_loc,
-                    hourly_data.wind_direction_10m.get("data")[i] + 180,
-                    26,
-                    26,
-                )
+    def _setup_temp_item(self, icon_box, val_label, index, hourly_data):
+        temp = hourly_data.temperature_2m.get("data")[index]
+        val_label.set_text(f"{temp}°")
+        
+        code = hourly_data.weathercode.get("data")[index]
+        icon_key = str(code) + ("n" if hourly_data.is_day.get("data")[index] == 0 else "")
+        icon_path = icons.get(icon_key, icons.get("unknown"))
+        
+        img = Gtk.Image.new_from_file(icon_path)
+        img.set_pixel_size(50)
+        icon_box.append(img)
+        icon_box.set_margin_bottom(5)
 
-                icon_box.set_margin_top(10)
-                icon_box.append(img.img_box)
+    def _setup_wind_item(self, icon_box, val_label, index, hourly_data):
+        speed = hourly_data.windspeed_10m.get("data")[index]
+        direction = hourly_data.wind_direction_10m.get("data")[index]
+        val_label.set_text(str(speed))
+        val_label.set_margin_top(0)
+        
+        icon_box.append(DrawImage(icon_loc, direction + 180, 32, 32).img_box)
+        icon_box.set_margin_top(10)
+        icon_box.set_margin_bottom(5)
 
-            elif page_name == "hourly":
-                label_val.set_text(str(hourly_data.temperature_2m.get("data")[i]) + "°")
-                label_timestamp.set_margin_bottom(5)
+    def _setup_prec_item(self, icon_box, val_label, index, hourly_data, max_prec):
+        val = hourly_data.precipitation.get("data")[index]
+        if settings.is_using_inch_for_prec: val /= 25.4
+        
+        bar = DrawBar(val / max_prec if max_prec > 0 else 0)
+        icon_box.append(bar.dw)
+        
+        val_text = f"{val:.2f}" if val >= 0.01 else ("0" if val == 0 else f"{val:.1f}+")
+        val_label.set_text(val_text)
+        val_label.set_margin_top(0)
 
-                weather_code = hourly_data.weathercode.get("data")[i]
-                condition_icon = icons[str(weather_code)]
+    def _create_empty_prec_widget(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=3, margin_end=3, hexpand=True)
+        box.set_size_request(-1, 120)
+        box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
+        
+        msgs = [
+            _("No precipitation today !"),
+            _("No precipitation expected today!"),
+            _("Anticipate a precipitation-free day !"),
+            _("Enjoy a rain-free day today!"),
+            _("Umbrella status: resting. No precipitation in sight !"),
+            _("No rain in sight today!"),
+        ]
+        label = Gtk.Label(label=random.choice(msgs))
+        label.set_css_classes(["text-a", "bold-3", "light-2"])
+        label.set_margin_top(40)
+        label.set_margin_bottom(30)
+        box.append(label)
+        return box
 
-                # if it is night
-                if hourly_data.is_day.get("data")[i] == 0:
-                    condition_icon = icons[str(weather_code) + "n"]
+    def _get_nearest_time_index(self, time_list):
+        now = time.time()
+        for i, ts in enumerate(time_list):
+            if abs(now - ts) < 1800:
+                return i
+        return 0
 
-                icon_main = Gtk.Image().new_from_file(condition_icon)
-                icon_main.set_hexpand(True)
-                icon_main.set_pixel_size(46)
-                icon_box.set_margin_bottom(10)
-                icon_box.append(icon_main)
-
-            elif page_name == "prec":
-                bar_obj = None
-                prec = hourly_data.precipitation.get("data")[i]
-                if settings.is_using_inch_for_prec:
-                    prec = hourly_data.precipitation.get("data")[i] / 25.4
-                if max_prec == 0:
-                    bar_obj = DrawBar(0)
-                else:
-                    bar_obj = DrawBar(prec / max_prec)
-                icon_box.append(bar_obj.dw)
-                if prec > 0:
-                    label_val.set_text("{:.2f}".format(prec))
-                    if prec < 0.01:
-                        label_val.set_text("{:.1f}+".format(prec))
-                else:
-                    label_val.set_text("0")
-
-                label_val.set_margin_top(0)
-
-        # Add scrollbar offset
-        container_size = graphic_container.get_preferred_size()[1]
-        container_width = container_size.width
-        scrollbar_offset = (container_width / 24) * (nearest_current_time_idx - 1)
-        h_adjustment = Gtk.Adjustment(
-            value=scrollbar_offset, lower=0, upper=container_width
-        )
-        scrolled_window.set_hadjustment(h_adjustment)
+    def _scroll_to_now(self, scrolled, container, index):
+        width = container.get_width()
+        if width > 0:
+            offset = (width / 24) * (index - 1)
+            scrolled.get_hadjustment().set_value(offset)
 
     def cleanup(self):
         """Disconnect all self-referential signal handlers to break GObject↔Python cycles."""
@@ -284,17 +311,14 @@ class HourlyDetails(Gtk.Grid):
 
     def on_scroll(self, controller, dx, dy):
         hadj = self.scrolled_window.get_hadjustment()
-        step = hadj.get_step_increment()
-
-        # convert vertical scroll to horizontal,
-        # keep horizontal the same
         if dx == 0 and dy != 0:
-            delta = step * (1 if dy >0 else -1)
+            delta = hadj.get_step_increment() * (1 if dy > 0 else -1)
         else:
             delta = dx
-
-        #set the new horizontal position without going too far. 
-        new_val = hadj.get_value() + delta
-        new_val = max(hadj.get_lower(), min(new_val, hadj.get_upper() - hadj.get_page_size()))
+        
+        new_val = clamp(hadj.get_value() + delta, hadj.get_lower(), hadj.get_upper() - hadj.get_page_size())
         hadj.set_value(new_val)
         return True
+
+def clamp(val, min_val, max_val):
+    return max(min_val, min(val, max_val))

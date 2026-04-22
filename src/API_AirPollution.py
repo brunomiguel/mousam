@@ -14,7 +14,7 @@ class AirPollution:
             url = url + f"&hourly={hourly_fields}"
 
         try:
-            url = url + "&timeformat=unixtime" + "&forecast_days=1"
+            url = url + "&timeformat=unixtime" + "&past_days=3" + "&forecast_days=3"
             response = requests.get(url)
             response.raise_for_status()  # Raise an exception if the request was unsuccessful
             data = response.json()
@@ -29,10 +29,19 @@ class AirPollution:
             "pm10",
             "pm2_5",
             "carbon_monoxide",
+            "carbon_dioxide",
             "nitrogen_dioxide",
             "sulphur_dioxide",
             "ozone",
+            "dust",
             "ammonia",
+            "methane",
+            "alder_pollen",
+            "birch_pollen",
+            "grass_pollen",
+            "mugwort_pollen",
+            "olive_pollen",
+            "ragweed_pollen",
         ]
 
         return self.current_air_pollution(lat, lon, hourly=hourly_args)

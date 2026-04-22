@@ -231,21 +231,27 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         # Main Grid Layout
         grid = Gtk.Grid()
         grid.set_margin_top(20)
-        grid.set_margin_bottom(20)
+        grid.set_margin_bottom(10)
         grid.set_margin_start(12)
         grid.set_margin_end(12)
         grid.set_hexpand(True)
 
         # --- Top Section ---
         current_clamp = Adw.Clamp(maximum_size=1400, tightening_threshold=200)
-        current_clamp.set_child(CurrentCondition())
+        curr_cond = CurrentCondition()
+        curr_cond.set_size_request(-1, 100)
+        current_clamp.set_child(curr_cond)
         grid.attach(current_clamp, 0, 0, 3, 1)
 
-        grid.attach(HourlyDetails(), 0, 1, 2, 1)
+        hourly = HourlyDetails()
+        hourly.set_size_request(-1, 180)
+        grid.attach(hourly, 0, 1, 2, 1)
 
         # --- Forecast Section ---
-        forecast_clamp = Adw.Clamp(maximum_size=800)
-        forecast_clamp.set_child(Forecast())
+        forecast_clamp = Adw.Clamp()
+        forecast = Forecast()
+        # forecast.set_size_request(-1, 500)
+        forecast_clamp.set_child(forecast)
         grid.attach(forecast_clamp, 2, 1, 1, 2)
 
         # --- Small Widgets Grid ---
@@ -253,6 +259,7 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         grid.attach(widget_grid, 1, 2, 1, 1)
 
         def add_card(widget, col, row, width=1):
+            # widget.set_size_request(-1, 120)
             widget_grid.attach(widget, col, row, width, 1)
 
         # Wind
@@ -337,9 +344,8 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         self.main_stack.set_visible_child_name(state)
 
     def _create_loader_page(self):
-        spinner = Gtk.Spinner()
+        spinner = Adw.Spinner()
         spinner.set_size_request(64, 64)
-        spinner.start()
         page = Adw.StatusPage()
         page.set_title(_("Getting Weather Data"))
         page.set_child(spinner)

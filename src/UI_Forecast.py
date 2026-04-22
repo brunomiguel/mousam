@@ -15,7 +15,8 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib, Adw
+import threading
 
 from .constants import icons
 from .config import settings
@@ -54,9 +55,9 @@ class Forecast(Gtk.Grid):
     ITEM_WIDTH_REQUEST: int = 120
     ITEM_HEIGHT_REQUEST: int = 16
     SCROLLED_WINDOW_WIDTH: int = 220
-    SCROLLED_WINDOW_HEIGHT: int = 480
+    SCROLLED_WINDOW_HEIGHT: int = 504
     ICON_SIZE: int = 50
-    FORECAST_ITEM_MARGIN: int = 6
+    FORECAST_ITEM_MARGIN: int = 4
     LABEL_BOX_WIDTH: int = 80
     LABEL_BOX_HEIGHT: int = 60
 
@@ -106,6 +107,7 @@ class Forecast(Gtk.Grid):
             orientation=Gtk.Orientation.VERTICAL,
             hexpand=True,
             halign=Gtk.Align.CENTER,
+            # vexpand=True
         )
         self.attach(top_bar, 0, 0, 1, 1)
 
@@ -131,6 +133,7 @@ class Forecast(Gtk.Grid):
         button_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         button_bar.add_css_class("linked")
         button_bar.set_margin_start(2)
+        button_bar.set_margin_bottom(6)
         button_bar.set_valign(Gtk.Align.CENTER)
 
         # Tomorrow button
@@ -188,17 +191,46 @@ class Forecast(Gtk.Grid):
         Args:
             page: The ForecastPage enum value to load.
         """
-        # Import data modules lazily to avoid circular imports
-        daily_forecast_data = fetch_daily_forecast()
-        hourly_forecast_data = fetch_hourly_forecast()
-
         page_name = page.name.lower()
-        container = Gtk.Box(margin_top=0, margin_bottom=0)
+        
+        # Main container for the page
+        container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        container.set_size_request(-1, self.SCROLLED_WINDOW_HEIGHT)
         self._forecast_stack.add_named(container, page_name)
         self._forecast_stack.set_visible_child_name(page_name)
 
+        # Spinner for loading state
+        spinner = Adw.Spinner(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, hexpand=True)
+        spinner.set_size_request(32, 32)
+        spinner.set_margin_top(self.SCROLLED_WINDOW_HEIGHT // 2)
+        container.append(spinner)
+
+        def _fetch_data():
+            try:
+                # Import data modules lazily to avoid circular imports
+                daily_data = fetch_daily_forecast()
+                hourly_data = fetch_hourly_forecast()
+                GLib.idle_add(self._on_data_loaded, page, container, spinner, daily_data, hourly_data)
+            except Exception as e:
+                print(f"Error loading forecast data: {e}")
+                # Handle error UI if needed
+
+        threading.Thread(target=_fetch_data, daemon=True).start()
+
+    def _on_data_loaded(
+        self,
+        page: ForecastPage,
+        container: Gtk.Box,
+        spinner: Adw.Spinner,
+        daily_forecast_data: Any,
+        hourly_forecast_data: Any,
+    ) -> None:
+        """Callback to populate the UI once data is fetched."""
+        # Remove spinner
+        container.remove(spinner)
+
         # Scrolled window for vertical scrolling
-        scrolled = Gtk.ScrolledWindow(margin_top=4, margin_bottom=4)
+        scrolled = Gtk.ScrolledWindow(hexpand=True)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_size_request(self.SCROLLED_WINDOW_WIDTH, self.SCROLLED_WINDOW_HEIGHT)
         scrolled.set_kinetic_scrolling(True)
@@ -321,7 +353,7 @@ class Forecast(Gtk.Grid):
 
     def _add_placeholder_column(self, grid: Gtk.Grid) -> None:
         """Add an empty placeholder column (col 2) for layout balance."""
-        placeholder = Gtk.Grid(valign=Gtk.Align.CENTER, margin_end=20)
+        placeholder = Gtk.Grid(valign=Gtk.Align.CENTER, margin_end=0)
         grid.attach(placeholder, 2, 0, 1, 1)
 
     def _add_temperature_column(

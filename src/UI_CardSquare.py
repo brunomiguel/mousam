@@ -72,7 +72,7 @@ class CardSquare:
 
         # 1. Main Container (Vertical Box)
         card_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        card_box.set_size_request(170, 100)
+        card_box.set_size_request(170, 140)
         card_box.set_css_classes(CSS_CARD_BASE)
         card_box.set_margin_top(6)
         card_box.set_margin_start(3)
