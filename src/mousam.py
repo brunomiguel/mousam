@@ -23,6 +23,7 @@ from .UI_Forecast import Forecast
 from .UI_CardSquare import CardSquare
 from .UI_CardDayNight import CardDayNight
 from .UI_CardAirPollution import CardAirPollution
+from .UI_CompactWeather import CompactWeatherWindow
 
 from .config import settings
 from .CORE_weatherData import (
@@ -115,6 +116,12 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         btn_loc.set_action_name("win.locations")
         self.header.pack_end(btn_loc)
 
+        # Compact Mode Button
+        btn_compact = Gtk.Button(icon_name="view-restore-symbolic")
+        btn_compact.set_tooltip_text(_("Compact Mode"))
+        btn_compact.set_action_name("win.compact")
+        self.header.pack_end(btn_compact)
+
     def _setup_actions(self):
         action_group = Gio.SimpleActionGroup()
         self.insert_action_group("win", action_group)
@@ -122,6 +129,7 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         actions = [
             ("refresh", self._on_action_refresh, ["<Control>r"]),
             ("locations", self._on_action_locations, ["<Control>l"]),
+            ("compact", self._on_action_compact, ["<Control>m"]),
             ("preferences", self._on_action_preferences, ["<Control>comma"]),
             ("shortcuts", self._on_action_shortcuts, ["<Control>question"]),
             ("about", self._on_action_about, None),
@@ -415,6 +423,17 @@ class WeatherMainWindow(Adw.ApplicationWindow):
     def _on_action_locations(self, action, param):
         win = WeatherLocations(self)
         win.present()
+
+    def _on_action_compact(self, action, param):
+        app = self.get_application()
+        compact_win = CompactWeatherWindow(app, on_back_to_normal=lambda: self._switch_to_normal(app, compact_win))
+        compact_win.present()
+        self.close()
+
+    def _switch_to_normal(self, app, compact_win):
+        main_win = WeatherMainWindow(application=app)
+        main_win.present()
+        compact_win.close()
 
     def _on_action_preferences(self, action, param):
         win = WeatherPreferences(self)

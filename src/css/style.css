@@ -422,3 +422,65 @@
     background: linear-gradient(127deg, rgba(28, 27, 38, 1), rgba(50, 50, 50, 0) 100%),
         linear-gradient(217deg, rgba(50, 50, 50, 1), rgba(28, 27, 38, 1) 100%);
 }
+
+/* Compact Mode Redesign */
+.compact-container {
+    border-radius: 13px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    color: white;
+}
+
+.compact-city {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 0px;
+}
+
+.compact-condition-icon {
+    margin-right: 10px;
+}
+
+.compact-condition-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.compact-detail-label {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.compact-detail-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.compact-time-value {
+    font-size: 0.9rem;
+    margin-left: 10px;
+    opacity: 0.8;
+    font-weight: 400;
+}
+
+.compact-date {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    /* font-weight: 400; */
+}
+
+.compact-temp {
+    font-size: 5rem;
+    font-weight: 800;
+    color: white;
+}
+
+.compact-raindrops {
+    opacity: 0.4;
+}
+
+.compact-window {
+    background-color: transparent;
+}
