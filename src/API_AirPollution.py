@@ -6,7 +6,7 @@ base_url = "https://air-quality-api.open-meteo.com/v1/air-quality"
 
 class AirPollution:
     @staticmethod
-    # @cached()
+    @cached()
     def current_air_pollution(latitude: float, longitude: float, **kwargs):
         url = base_url + f"?latitude={latitude}&longitude={longitude}"
         if "hourly" in kwargs:
