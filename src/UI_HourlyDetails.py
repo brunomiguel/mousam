@@ -81,13 +81,13 @@ class HourlyDetails(Gtk.Grid):
     def create_stack_page(self, page_name):
         """Create a new page in the hourly stack with a loading indicator."""
         container = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        container.set_size_request(-1, 160)
+        container.set_size_request(-1, 180)
         self.hourly_stack.add_named(container, page_name)
         self.hourly_stack.set_visible_child_name(page_name)
 
         spinner = Adw.Spinner(halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, hexpand=True)
         spinner.set_size_request(32, 32)
-        spinner.set_margin_top(60)
+        spinner.set_margin_top(80)
         container.append(spinner)
 
         def _fetch_data():
@@ -195,6 +195,7 @@ class HourlyDetails(Gtk.Grid):
     def _create_hour_item(self, page_name, index, hourly_data, nearest_idx, max_prec):
         """Factory method for creating an hour card."""
         item_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=4, margin_end=4)
+        item_box.set_size_request(-1, 120)
         item_box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
 
         # Add time label
@@ -240,9 +241,9 @@ class HourlyDetails(Gtk.Grid):
         icon_path = icons.get(icon_key, icons.get("unknown"))
         
         img = Gtk.Image.new_from_file(icon_path)
-        img.set_pixel_size(46)
+        img.set_pixel_size(50)
         icon_box.append(img)
-        icon_box.set_margin_bottom(10)
+        icon_box.set_margin_bottom(5)
 
     def _setup_wind_item(self, icon_box, val_label, index, hourly_data):
         speed = hourly_data.windspeed_10m.get("data")[index]
@@ -250,8 +251,9 @@ class HourlyDetails(Gtk.Grid):
         val_label.set_text(str(speed))
         val_label.set_margin_top(0)
         
-        icon_box.append(DrawImage(icon_loc, direction + 180, 24, 24).img_box)
+        icon_box.append(DrawImage(icon_loc, direction + 180, 32, 32).img_box)
         icon_box.set_margin_top(10)
+        icon_box.set_margin_bottom(5)
 
     def _setup_prec_item(self, icon_box, val_label, index, hourly_data, max_prec):
         val = hourly_data.precipitation.get("data")[index]
@@ -266,6 +268,7 @@ class HourlyDetails(Gtk.Grid):
 
     def _create_empty_prec_widget(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=3, margin_end=3, hexpand=True)
+        box.set_size_request(-1, 120)
         box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
         
         msgs = [

@@ -55,9 +55,9 @@ class Forecast(Gtk.Grid):
     ITEM_WIDTH_REQUEST: int = 120
     ITEM_HEIGHT_REQUEST: int = 16
     SCROLLED_WINDOW_WIDTH: int = 220
-    SCROLLED_WINDOW_HEIGHT: int = 484
+    SCROLLED_WINDOW_HEIGHT: int = 504
     ICON_SIZE: int = 50
-    FORECAST_ITEM_MARGIN: int = 6
+    FORECAST_ITEM_MARGIN: int = 4
     LABEL_BOX_WIDTH: int = 80
     LABEL_BOX_HEIGHT: int = 60
 
@@ -132,6 +132,7 @@ class Forecast(Gtk.Grid):
         button_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         button_bar.add_css_class("linked")
         button_bar.set_margin_start(2)
+        button_bar.set_margin_bottom(6)
         button_bar.set_valign(Gtk.Align.CENTER)
 
         # Tomorrow button
@@ -219,7 +220,7 @@ class Forecast(Gtk.Grid):
         container.remove(spinner)
 
         # Scrolled window for vertical scrolling
-        scrolled = Gtk.ScrolledWindow(margin_top=4, margin_bottom=4,hexpand=True)
+        scrolled = Gtk.ScrolledWindow(hexpand=True)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scrolled.set_size_request(self.SCROLLED_WINDOW_WIDTH, self.SCROLLED_WINDOW_HEIGHT)
         scrolled.set_kinetic_scrolling(True)
