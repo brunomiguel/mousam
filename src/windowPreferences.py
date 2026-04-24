@@ -10,7 +10,6 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 
 
-global updated_at
 updated_at = time.time()
 
 
@@ -141,10 +140,11 @@ class WeatherPreferences(Adw.PreferencesWindow):
         self.auto_refresh_group.set_margin_top(20)
         appearance_page.add(self.auto_refresh_group)
 
-        self.auto_refresh_intervals = [0, 15, 30, 60, 120]
+        self.auto_refresh_intervals = [0,1, 15, 30, 60, 120]
         auto_refresh_labels = Gtk.StringList.new(
             [
                 _("Off"),
+                _("Every minute"),
                 _("Every 15 minutes"),
                 _("Every 30 minutes"),
                 _("Every hour"),

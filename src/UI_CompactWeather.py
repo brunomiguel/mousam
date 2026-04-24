@@ -19,6 +19,8 @@ class CompactWeather(Gtk.Overlay):
         super().__init__(**kwargs)
         self.on_back_clicked = on_back_clicked
         self._poll_timeout_id = None    # store timeout for cleanup
+        from .utils import AutoRefreshTimer
+        self.auto_refresh = AutoRefreshTimer(self._on_auto_refresh_tick)
         
         self.add_css_class("compact-container")
         self.set_valign(Gtk.Align.FILL)
@@ -31,12 +33,24 @@ class CompactWeather(Gtk.Overlay):
 
         self._setup_back_button()
         self._start_polling()
+        self.auto_refresh.setup()
+
+    def _on_auto_refresh_tick(self):
+        self._stop_polling()
+        _reset_weather_data()
+        self._start_polling()
+        return GLib.SOURCE_CONTINUE
+
+    def _trigger_fetch(self):
+        from .utils import fetch_all_weather_data_async
+        fetch_all_weather_data_async()
 
     def _start_polling(self):
         """Begin polling for data, store timeout id."""
         if self._is_data_ready():
             self._build_ui()
         else:
+            self._trigger_fetch()
             self._show_loader()
             self._poll_timeout_id = GLib.timeout_add(500, self._check_all_data_ready)
 
@@ -57,7 +71,7 @@ class CompactWeather(Gtk.Overlay):
 
         # This checks for the race condition of the threads in mousam.py with "cwt" and "apt" tags
         # If new data is actively being fetched, wait for it to finish
-        if any(t.name in ("cwt", "apt") for t in threading.enumerate()):
+        if any(t.name in ("cwt", "apt", "compact_fetch") for t in threading.enumerate()):
             return False
         return True
 
@@ -283,6 +297,7 @@ class CompactWeather(Gtk.Overlay):
 
     def dispose(self):
         self._stop_polling()
+        self.auto_refresh.stop()
         super().dispose()
 
 

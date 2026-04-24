@@ -1,6 +1,4 @@
-import gc
 import gi
-import threading
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -10,7 +8,7 @@ from gi.repository import Gtk, Adw, Gio, GLib
 from gettext import gettext as _, pgettext as C_
 
 # Module imports
-from .utils import create_toast, check_internet_connection, get_time_difference
+from .utils import create_toast, check_internet_connection, get_time_difference, local_time_data, AutoRefreshTimer, fetch_all_weather_data_async
 from .constants import bg_css
 from .windowAbout import AboutWindow
 from .windowPreferences import WeatherPreferences
@@ -46,7 +44,7 @@ class WeatherMainWindow(Adw.ApplicationWindow):
 
         # State Tracking
         self.added_cities= settings.added_cities
-        self._auto_refresh_timer_id = None
+        self.auto_refresh = AutoRefreshTimer(self._on_auto_refresh_tick)
 
         # --- UI Construction ---
         self._setup_actions()
@@ -57,10 +55,10 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         self._start_data_refresh(is_initial=True)
 
         # Auto-refresh setup
-        self._setup_auto_refresh()
+        self.auto_refresh.setup()
         settings.settings.connect(
             "changed::auto-refresh-interval",
-            lambda *_: self._setup_auto_refresh(),
+            lambda *_: self.auto_refresh.setup(),
         )
 
     def _setup_ui(self):
@@ -167,50 +165,12 @@ class WeatherMainWindow(Adw.ApplicationWindow):
 
 
         self._update_view_state("loader")
+        fetch_all_weather_data_async(
+            on_success=self._on_data_fetch_success,
+            on_error=lambda err: self._update_view_state("error_api")
+        )
 
-        # Pass coordinates to thread to ensure thread-safety against config changes
-        city_coords = settings.selected_city
-        threading.Thread(
-            target=self._worker_fetch_data, args=(city_coords,), daemon=True
-        ).start()
-
-    def _worker_fetch_data(self, city_coords):
-        """
-        Runs network requests.
-        Because your fetch_ functions update shared state in weatherData.py,
-        we simply run them sequentially here.
-        """
-        try:
-            # cwd : current_weather_data
-            # cwt : current_weather_thread
-            cwd = threading.Thread(target=fetch_current_weather, name="cwt")
-            cwd.start()
-            cwd.join()
-
-            hfd = threading.Thread(target=fetch_hourly_forecast, name="hft")
-            hfd.start()
-
-            dfd = threading.Thread(target=fetch_daily_forecast, name="dft")
-            dfd.start()
-
-            apd = threading.Thread(target=fetch_current_air_pollution, name="apt")
-            apd.start()
-
-            local_time = threading.Thread(
-                target=get_time_difference, args=("", True), name="local_time"
-            )
-            local_time.start()
-
-            hfd.join()
-            dfd.join()
-            apd.join()
-            local_time.join()
-            # Signal the main thread to read the updated data
-            GLib.idle_add(self._on_data_fetch_success)
-
-        except Exception as e:
-            print(f"Error fetching data: {e}")
-            GLib.idle_add(self._update_view_state, "error_api")
+    # _worker_fetch_data moved to utils.fetch_all_weather_data_async
 
     def _on_data_fetch_success(self):
         """Called on Main Thread after the worker has populated weatherData."""
@@ -406,79 +366,25 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         for cls in target - current:
             self.add_css_class(cls)
 
-    def _setup_auto_refresh(self):
-        if self._auto_refresh_timer_id is not None:
-            GLib.source_remove(self._auto_refresh_timer_id)
-            self._auto_refresh_timer_id = None
-
-        interval = settings.auto_refresh_interval
-        if interval > 0:
-            self._auto_refresh_timer_id = GLib.timeout_add_seconds(
-                interval * 60, self._on_auto_refresh_tick
-            )
-
-    def _clear_draw_funcs(self, widget):
-        """Recursively sever GObject↔Python reference cycles in a widget subtree.
-
-        Two cycle types are handled:
-        1. DrawingArea set_draw_func: GObject stores a Python callable that holds
-           a ref back to the Python wrapper, preventing GObject refcount from
-           reaching zero. Replaced with a no-op before removal.
-        2. Signal handler cycles (HourlyDetails, Forecast): ToggleButton/Controller
-           signal closures store a Python bound method holding 'self', keeping the
-           parent widget alive. Widgets exposing cleanup() disconnect these handlers.
-
-        Neither cycle is visible to GObject refcounting or Python's cyclic GC
-        because they cross the C↔Python boundary via GLib signal closures.
-        """
-        if hasattr(widget, "cleanup"):
-            widget.cleanup()
-        if isinstance(widget, Gtk.DrawingArea):
-            widget.set_draw_func(lambda *_: None, None)
-        child = widget.get_first_child()
-        while child is not None:
-            next_sib = child.get_next_sibling()
-            self._clear_draw_funcs(child)
-            child = next_sib
+    # Removed _setup_auto_refresh, logic moved to utils.AutoRefreshTimer
 
     def _pre_refresh_cleanup(self):
-        from . import CORE_weatherData
         from .API_Weather import Weather
         from .API_AirPollution import AirPollution
-        from . import utils as utils_module
 
-        # Evict old content widget tree early (before new fetch begins).
-        # Before removal, walk the subtree and clear set_draw_func on every
-        # DrawingArea. This breaks the cross-language GObject↔Python reference
-        # cycle created by set_draw_func(self.on_draw), which neither GObject's
-        # refcounting nor Python's cyclic GC can resolve on their own.
+        # Evict old content widget tree (weak refs in draw funcs handle GC cleanly)
         child = self.main_stack.get_child_by_name("content")
         if child:
-            self._clear_draw_funcs(child)
             self.main_stack.remove(child)
-            del child  # drop local ref immediately
 
-        # Clear API response caches so the fetch goes to network and
-        # old response dicts are not kept alive alongside the new ones
+        # Clear API response caches so the next fetch goes to network
         Weather.current_weather.__func__.cache_clear()
         Weather.forecast_hourly.__func__.cache_clear()
         Weather.forecast_daily.__func__.cache_clear()
         AirPollution.current_air_pollution.cache_clear()
 
         # Clear timezone cache (will be repopulated during fetch)
-        utils_module.local_time_data.clear()
-
-        # Run cyclic GC to break any remaining Python-level cycles
-        gc.collect()
-
-        # Return freed pymalloc arenas to the OS. Python's allocator keeps freed
-        # memory in pools even after GC, which inflates RSS without being a real
-        # leak. malloc_trim(0) is Linux-specific and a no-op on other platforms.
-        try:
-            import ctypes
-            ctypes.cdll.LoadLibrary("libc.so.6").malloc_trim(0)
-        except Exception:
-            pass
+        local_time_data.clear()
 
     def _on_auto_refresh_tick(self):
         self._pre_refresh_cleanup()
@@ -486,9 +392,7 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         return GLib.SOURCE_CONTINUE
 
     def _save_window_state(self, window):
-        if self._auto_refresh_timer_id is not None:
-            GLib.source_remove(self._auto_refresh_timer_id)
-            self._auto_refresh_timer_id = None
+        self.auto_refresh.stop()
 
         width, height = window.get_default_size()
         settings.window_width = width
