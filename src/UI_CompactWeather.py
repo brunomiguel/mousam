@@ -14,7 +14,41 @@ class CompactWeather(Gtk.Overlay):
     def __init__(self, on_back_clicked, **kwargs):
         super().__init__(**kwargs)
         self.on_back_clicked = on_back_clicked
+        
+        self.add_css_class("compact-container")
+        self.set_valign(Gtk.Align.FILL)
+        self.set_halign(Gtk.Align.FILL)
+        self.set_size_request(280, 220)
+
+        # Main stack to switch between loader and content
+        self.stack = Gtk.Stack()
+        self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        self.set_child(self.stack)
+
+        # Back Button (Always available as overlay)
+        self._setup_back_button()
+
+        # Initial check
+        self._check_data_and_build()
+
+    def _check_data_and_build(self):
+        from .CORE_weatherData import current_weather_data as data
+        if data is None:
+            if not self.stack.get_child_by_name("loader"):
+                spinner = Adw.Spinner()
+                spinner.set_size_request(32, 32)
+                spinner.set_halign(Gtk.Align.CENTER)
+                spinner.set_valign(Gtk.Align.CENTER)
+                self.stack.add_named(spinner, "loader")
+            
+            self.stack.set_visible_child_name("loader")
+            GLib.timeout_add(500, self._check_data_and_build)
+            return False
+        
+        # Data is present, build and show content
         self._build_ui()
+        return False
+
 
     def _build_ui(self):
         from .CORE_weatherData import current_weather_data as data, air_apllution_data as aq_data
@@ -28,15 +62,23 @@ class CompactWeather(Gtk.Overlay):
         self.set_halign(Gtk.Align.FILL)
         self.set_size_request(280, 220)
 
-        # Apply dynamic weather background
+        # Update dynamic weather background
         if settings.is_using_dynamic_bg:
             from .constants import bg_css
             weather_code = data.weathercode.get("data")
+            if weather_code is None: weather_code = 0
             is_day = data.is_day.get("data")
+            if is_day is None: is_day = 1
             code_key = str(weather_code) + ("n" if is_day == 0 else "")
             css_class = bg_css.get(code_key, "")
-            if css_class:
-                self.add_css_class(css_class)
+            
+            root = self.get_root()
+            if root and css_class:
+                valid_bgs = set(bg_css.values())
+                for cls in root.get_css_classes():
+                    if cls in valid_bgs:
+                        root.remove_css_class(cls)
+                root.add_css_class(css_class)
 
         # 3. Content Layer (Using a single Grid for positioning)
         grid = Gtk.Grid()
@@ -47,6 +89,11 @@ class CompactWeather(Gtk.Overlay):
         grid.set_margin_top(25)
         grid.set_margin_bottom(25)
         self.add_overlay(grid)
+        
+        # Hide loader
+        loader = self.stack.get_child_by_name("loader")
+        if loader:
+            loader.set_visible(False)
 
         # City
         city_list = JsonProcessor.str_list_to_json(settings.added_cities)
@@ -69,14 +116,17 @@ class CompactWeather(Gtk.Overlay):
 
         # Condition
         weather_code = data.weathercode.get("data")
-        lbl_cond = Gtk.Label(label=condition.get(str(weather_code), "Unknown"))
+        if weather_code is None: weather_code = 0
+        lbl_cond = Gtk.Label(label=condition.get(str(weather_code), condition.get("0", "Unknown")))
         lbl_cond.set_halign(Gtk.Align.START)
         lbl_cond.add_css_class("text-3")
         grid.attach(lbl_cond, 0, 1, 1, 1)
 
         # --- Top-Right: Icon ---
         icon_path = icons.get(str(weather_code), icons.get("unknown"))
-        if data.is_day.get("data") == 0:
+        is_day_val = data.is_day.get("data")
+        if is_day_val is None: is_day_val = 1
+        if is_day_val == 0:
             icon_path = icons.get(str(weather_code) + "n", icon_path)
 
         img_cond = Gtk.Image.new_from_file(icon_path)
@@ -91,7 +141,9 @@ class CompactWeather(Gtk.Overlay):
         grid.attach(spacer, 0, 2, 1, 1)
 
         # --- Bottom-Left Corner: Temp ---
-        lbl_temp = Gtk.Label(label=f"{data.temperature_2m.get('data'):.0f}°")
+        temp_val = data.temperature_2m.get('data')
+        temp_str = f"{temp_val:.0f}°" if temp_val is not None else "--°"
+        lbl_temp = Gtk.Label(label=temp_str)
         lbl_temp.set_halign(Gtk.Align.START)
         lbl_temp.set_valign(Gtk.Align.START)
         lbl_temp.set_margin_top(25)
@@ -148,6 +200,7 @@ class CompactWeather(Gtk.Overlay):
         GLib.timeout_add_seconds(1, update_clock)
 
         def get_wind_dir(deg):
+            if deg is None: return "--"
             dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
             idx = int((deg + 11.25) / 22.5) % 16
             return dirs[idx]
@@ -155,13 +208,22 @@ class CompactWeather(Gtk.Overlay):
         wind_deg = data.winddirection_10m.get('data')
         wind_dir = get_wind_dir(wind_deg)
         
-        aqi = aq_data.get("current_us_aqi", "--")
+        aqi = aq_data.get("current_us_aqi", "--") if aq_data else "--"
         add_detail_row(_("AQI"), str(aqi), 4)
-        add_detail_row(_("Wind"), f"{data.windspeed_10m.get('data')} {data.windspeed_10m.get('unit')} • {wind_dir}", 1)
-        add_detail_row(_("Hum."), f"{data.relativehumidity_2m.get('data')} %", 2)
-        add_detail_row(_("Pres."), f"{data.surface_pressure.get('data')} {data.surface_pressure.get('unit')}", 3)
         
+        wind_speed = data.windspeed_10m.get('data')
+        wind_speed_str = f"{wind_speed} {data.windspeed_10m.get('unit')}" if wind_speed is not None else "--"
+        add_detail_row(_("Wind"), f"{wind_speed_str} • {wind_dir}", 1)
+        
+        hum = data.relativehumidity_2m.get('data')
+        hum_str = f"{hum} %" if hum is not None else "-- %"
+        add_detail_row(_("Hum."), hum_str, 2)
+        
+        pres = data.surface_pressure.get('data')
+        pres_str = f"{pres} {data.surface_pressure.get('unit')}" if pres is not None else "--"
+        add_detail_row(_("Pres."), pres_str, 3)
 
+    def _setup_back_button(self):
         # Back Button (Top Right corner) - Hidden by default, shown on hover
         self.btn_back = Gtk.Button()
         self.btn_back.set_icon_name("go-previous-symbolic")
@@ -188,7 +250,7 @@ class CompactWeather(Gtk.Overlay):
         self.btn_back.set_visible(False)
 
 class CompactWeatherWindow(Adw.ApplicationWindow):
-    def __init__(self, app, on_back_to_normal, **kwargs):
+    def __init__(self, app, bg_classes=None, on_back_to_normal=None, **kwargs):
         super().__init__(application=app, **kwargs)
         self.on_back_to_normal = on_back_to_normal
         self.set_title(_("Mousam Compact"))
@@ -197,7 +259,12 @@ class CompactWeatherWindow(Adw.ApplicationWindow):
         self.set_decorated(False)
         self.add_css_class("compact-window")
         if settings.is_using_dynamic_bg:
-            self.add_css_class("dynamic-bg")
+            if bg_classes:
+                from .constants import bg_css
+                valid_bgs = set(bg_css.values())
+                for cls in bg_classes:
+                    if cls in valid_bgs:
+                        self.add_css_class(cls)
         
         # 1. Create a WindowHandle to make the whole window draggable
         handle = Gtk.WindowHandle()

@@ -231,8 +231,11 @@ class WeatherMainWindow(Adw.ApplicationWindow):
             self.main_stack.remove(child)
 
         # Dynamic Background
+        w_code = cw_data.weathercode.get("data")
+        is_day = cw_data.is_day.get("data")
         self._use_dynamic_bg(
-            cw_data.weathercode.get("data"), cw_data.is_day.get("data")
+            w_code if w_code is not None else 0,
+            is_day if is_day is not None else 1
         )
 
         # Main Grid Layout
@@ -437,7 +440,8 @@ class WeatherMainWindow(Adw.ApplicationWindow):
 
     def _on_action_compact(self, action, param):
         app = self.get_application()
-        compact_win = CompactWeatherWindow(app, on_back_to_normal=lambda: self._switch_to_normal(app, compact_win))
+        bg_classes = self.get_css_classes()
+        compact_win = CompactWeatherWindow(app, bg_classes=bg_classes, on_back_to_normal=lambda: self._switch_to_normal(app, compact_win))
         compact_win.present()
         self.close()
 
