@@ -1,438 +1,492 @@
-.condition_label {
-    font-size: 30px;
+/* ------------------------------------------
+   TYPOGRAPHY – scalable rem system
+------------------------------------------ */
+.text-xs {
+    font-size: 0.75rem;
 }
 
-.main_temp_label {
-    font-size: 3.5rem;
+/* 12px */
+.text-sm {
+    font-size: 0.875rem;
 }
 
-.btn_sm {
-    font-size: .95rem;
-    padding: 0.2rem .9rem;
+/* 14px */
+.text-base {
+    font-size: 1rem;
 }
 
-
-.text-l1 {
-    font-size: 4rem;
+/* 16px */
+.text-lg {
+    font-size: 1.125rem;
 }
 
-.text-l2 {
-    font-size: 3.5rem;
+/* 18px */
+.text-xl {
+    font-size: 1.25rem;
 }
 
-.text-l3 {
-    font-size: 3rem;
-}
-
-.text-l4 {
-    font-size: 2.5rem;
-}
-
-.text-l5 {
-    font-size: 2.35rem;
-}
-
-.text-l6 {
-    font-size: 2.2rem;
-}
-
-.text-l6 {
-    font-size: 2rem;
-}
-
-.text-1 {
-    font-size: 2.2rem;
-}
-
-.text-2a {
-    font-size: 1.8rem;
-}
-
-.text-2b {
+/* 20px */
+.text-2xl {
     font-size: 1.5rem;
 }
 
-.text-3 {
-    font-size: 1.3rem;
+/* 24px */
+.text-3xl {
+    font-size: 1.875rem;
 }
 
-.text-3a {
-    font-size: 1.2rem;
+/* 30px */
+.text-4xl {
+    font-size: 2.25rem;
 }
 
-.text-4 {
-    font-size: 1.1rem;
+/* 36px */
+.text-5xl {
+    font-size: 3rem;
 }
 
-.text-5 {
-    font-size: 1.05rem;
+/* 48px */
+.text-6xl {
+    font-size: 3.75rem;
 }
 
-.text-6 {
-    font-size: .95rem;
+/* 60px */
+.text-7xl {
+    font-size: 4.5rem;
 }
 
-.text-7 {
-    font-size: .9rem;
+/* 72px */
+.text-8xl {
+    font-size: 6rem;
 }
 
-.text-8 {
-    font-size: .85rem;
+/* 96px */
+
+/* Font weights */
+.font-light {
+    font-weight: 300;
 }
 
-.text-9 {
-    font-size: .8rem;
+.font-normal {
+    font-weight: 400;
 }
 
-.title-xl {
-    font-size: 76px;
-}
-
-.title-l {
-    font-size: 42px;
-}
-
-.title-m {
-    font-size: 22px;
-}
-
-.title-s {
-    font-size: 18px;
-}
-
-.light-1 {
-    opacity: .95;
-}
-
-.light-2 {
-    opacity: .9;
-}
-
-.light-3 {
-    opacity: .8;
-}
-
-.light-4 {
-    opacity: .75;
-}
-
-.light-5 {
-    opacity: .7;
-}
-
-.light-6 {
-    opacity: .6;
-}
-
-
-.bold-1 {
-    font-weight: 700;
-}
-
-.bold-2 {
-    font-weight: 600;
-}
-
-.bold-3 {
+.font-medium {
     font-weight: 500;
 }
 
+.font-semibold {
+    font-weight: 600;
+}
 
-.dark {
+.font-bold {
+    font-weight: 700;
+}
+
+/* Text colors */
+.text-dark {
     color: #141414;
 }
 
-.main_window {
-    border-radius: 13px;
-    border: 1px solid rgba(100, 100, 100, .3);
+.text-white {
+    color: #ffffff;
+}
+
+.text-muted {
+    opacity: 0.7;
+}
+
+/* ------------------------------------------
+   SPACING (margin & padding)
+   scale: 0, 1, 2, 4, 6, 8, 10, 12, 16, 20, 24
+------------------------------------------ */
+.m-0 {
+    margin: 0;
+}
+
+.m-1 {
+    margin: 0.25rem;
+}
+
+.m-2 {
+    margin: 0.5rem;
+}
+
+.m-4 {
+    margin: 1rem;
+}
+
+.m-6 {
+    margin: 1.5rem;
+}
+
+.m-8 {
+    margin: 2rem;
+}
+
+.m-10 {
+    margin: 2.5rem;
+}
+
+.m-12 {
+    margin: 3rem;
+}
+
+.mt-0,
+.my-0 {
+    margin-top: 0;
+}
+
+.mt-1,
+.my-1 {
+    margin-top: 0.25rem;
+}
+
+.mt-2,
+.my-2 {
+    margin-top: 0.5rem;
+}
+
+.mt-4,
+.my-4 {
+    margin-top: 1rem;
+}
+
+.mt-6,
+.my-6 {
+    margin-top: 1.5rem;
+}
+
+.mt-8,
+.my-8 {
+    margin-top: 2rem;
+}
+
+.mb-0,
+.my-0 {
+    margin-bottom: 0;
+}
+
+.mb-1,
+.my-1 {
+    margin-bottom: 0.25rem;
+}
+
+.mb-2,
+.my-2 {
+    margin-bottom: 0.5rem;
+}
+
+.mb-4,
+.my-4 {
+    margin-bottom: 1rem;
+}
+
+.mb-6,
+.my-6 {
+    margin-bottom: 1.5rem;
+}
+
+.mb-8,
+.my-8 {
+    margin-bottom: 2rem;
+}
+
+.p-0 {
+    padding: 0;
+}
+
+.p-1 {
+    padding: 0.25rem;
+}
+
+.p-2 {
+    padding: 0.5rem;
+}
+
+.p-4 {
+    padding: 1rem;
+}
+
+.p-6 {
+    padding: 1.5rem;
+}
+
+.p-8 {
+    padding: 2rem;
+}
+
+.p-10 {
+    padding: 2.5rem;
+}
+
+.px-0 {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.px-1 {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+}
+
+.px-2 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+.px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+.py-0 {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.py-1 {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.py-4 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.py-6 {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
 }
 
 
-.overcast,
-.showers_scattered {
-    background: linear-gradient(127deg, rgba(155, 155, 155, 1), rgba(0, 134, 215, 0) 100%),
-        linear-gradient(217deg, rgba(155, 155, 155, 1), rgba(0, 134, 215, 1) 100%),
-        linear-gradient(336deg, rgba(155, 155, 155, 1), rgba(0, 134, 218, 1) 100%);
+
+
+/* ------------------------------------------
+   BORDERS & RADIUS
+------------------------------------------ */
+.rounded-none {
+    border-radius: 0;
 }
 
-.gradient-bg {
-    background: linear-gradient(0deg, rgba(237, 237, 237, 1) 0%, rgb(203, 221, 225) 100%);
+.rounded-sm {
+    border-radius: 0.125rem;
 }
 
-.hide {
-    opacity: .2;
+.rounded {
+    border-radius: 0.25rem;
 }
 
-.transparent_0 {
-    background: rgba(0, 0, 0, 0);
-    color: white;
+.rounded-md {
+    border-radius: 0.375rem;
 }
 
-.transparent_glass {
-    background: rgba(150, 150, 150, .2);
+.rounded-lg {
+    border-radius: 0.5rem;
 }
 
-.border_col {
-    border: 1px solid rgba(200, 200, 200, .1);
+.rounded-xl {
+    border-radius: 0.75rem;
 }
 
-.transparent_5 {
-    background: rgba(0, 0, 0, .35);
-    color: white;
+.rounded-2xl {
+    border-radius: 1rem;
 }
 
+.rounded-full {
+    border-radius: 9999px;
+}
+
+.border {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.border-subtle {
+    border: 1px solid rgba(200, 200, 200, 0.2);
+}
+
+.border-white-10 {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ------------------------------------------
+   OPACITY (light effects)
+------------------------------------------ */
+.opacity-100 {
+    opacity: 1;
+}
+
+.opacity-95 {
+    opacity: 0.95;
+}
+
+.opacity-90 {
+    opacity: 0.9;
+}
+
+.opacity-80 {
+    opacity: 0.8;
+}
+
+.opacity-75 {
+    opacity: 0.75;
+}
+
+.opacity-70 {
+    opacity: 0.7;
+}
+
+.opacity-60 {
+    opacity: 0.6;
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}
+
+.opacity-40 {
+    opacity: 0.4;
+}
+
+.opacity-30 {
+    opacity: 0.3;
+}
+
+.opacity-20 {
+    opacity: 0.2;
+}
+
+.opacity-0 {
+    opacity: 0;
+}
+
+/* ------------------------------------------
+   BACKGROUNDS & GRADIENTS
+------------------------------------------ */
 .bg-white {
     background-color: rgb(240, 240, 240);
 }
 
-.custom_card {
-    padding: .7rem .85rem;
+.bg-transparent {
+    background: rgba(0, 0, 0, 0);
 }
 
-.bar_container {
-    border-radius: 1rem;
-    background-color: rgb(240, 240, 240);
-
+.bg-glass {
+    background: rgba(150, 150, 150, 0.2);
 }
 
-.custom_card_forecast_item {
-    padding: 0rem 1.1rem;
-    border-radius: .7rem;
+.bg-dark-overlay {
+    background: rgba(0, 0, 0, 0.35);
+    color: white;
 }
 
-.custom_card_hourly {
-    border-radius: .5rem;
-    padding: .4rem .6rem;
-    margin-top: .3rem;
-}
-
-.custom_card_hourly_now {
-    padding: .7rem 1.2rem;
-    margin-top: 0rem;
-    background-color: rgba(196, 196, 196, 0.15);
-
-}
-
-.bg_light_grey {
+.bg-light-gray {
     background-color: rgba(224, 224, 224, 0.06);
 }
 
-
-
-
-
-.body {
-    padding: 20px;
-
+.bg-gray-100 {
+    background-color: #f5f5f5;
 }
 
-/* .card{
-    padding-left:20px;
-    padding-right:20px;
-    padding-top:16px;
-    padding-bottom:16px;
-} */
+.bg-gray-200 {
+    background-color: #e5e5e5;
+}
 
+.bg-gradient {
+    background: linear-gradient(0deg, rgba(237, 237, 237, 1) 0%, rgb(203, 221, 225) 100%);
+}
 
-.card_info {
+/* ------------------------------------------
+   COMPONENTS
+------------------------------------------ */
+/* Main window */
+.main-window {
+    border-radius: 13px;
+    border: 1px solid rgba(100, 100, 100, 0.3);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-sm {
+    font-size: 0.95rem;
+    padding: 0.2rem 0.9rem;
+}
+
+.btn-md {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+}
+
+.btn-lg {
+    font-size: 1.125rem;
+    padding: 0.75rem 1.5rem;
+}
+
+/* Cards */
+.card {
+    padding: 0.7rem 0.85rem;
+    border-radius: 1rem;
+}
+
+.card-forecast-item {
+    padding: 0 1.1rem;
+    border-radius: 0.7rem;
+}
+
+.card-hourly {
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    margin-top: 0.3rem;
+}
+
+.card-hourly-now {
+    padding: 0.7rem 1.2rem;
+    margin-top: 0;
+    background-color: rgba(196, 196, 196, 0.15);
+}
+
+.card-info {
     background-color: #F6635C;
+    color: white;
 }
 
-.bold {
-    font-weight: 600;
+/* Bar container */
+.bar-container {
+    border-radius: 1rem;
+    background-color: rgb(240, 240, 240);
 }
 
-.title-xl {
-    font-size: 76px;
-}
-
-.title-m {
-    font-size: 22px;
-}
-
-.title-s {
-    font-size: 18px;
-}
-
-.bg-green {
-    background-color: #00ff00;
-    /* Replace with your desired color */
-}
-
-.bg-orange {
-    background-color: #F6635C;
-    /* Replace with your desired color */
-}
-
-.bg-pink {
-    background-color: #FE7BE5;
-    /* Replace with your desired color */
-}
-
-.clear_sky {
-    background-color: hsla(205, 60%, 35%, 1);
-    background-image:
-        radial-gradient(at 100% 5%, hsla(215, 43%, 77%, 0.51) 0px, transparent 50%),
-        radial-gradient(at 43% 38%, hsla(206, 47%, 45%, 0.87) 0px, transparent 50%),
-        radial-gradient(at 0% 0%, hsla(24, 1%, 83%, 0.69) 0px, transparent 50%),
-        radial-gradient(at 43% 99%, hsla(214, 71%, 36%, 0.88) 0px, transparent 50%);
-}
-
-.few_clouds {
-    /* background: linear-gradient(127deg, rgba(187, 188, 179, 1), rgba(0, 134, 218, 0) 100%),
-    linear-gradient(217deg, rgba(187, 188, 179, 1), rgba(0, 174, 258, 1) 100%),
-    linear-gradient(136deg, rgba(187, 188, 179, 1), rgba(0, 174, 258, 1) 100%); */
-    background-color: hsla(210, 51%, 40%, 1);
-    background-image:
-        radial-gradient(at 46% 22%, hsla(201, 54%, 45%, 1) 0px, transparent 50%),
-        radial-gradient(at 0% 0%, hsla(180, 17%, 72%, 1) 0px, transparent 50%),
-        radial-gradient(at 28% 88%, hsla(0, 0%, 74%, 0.59) 0px, transparent 50%),
-        radial-gradient(at 86% 78%, hsla(200, 19%, 59%, 1) 0px, transparent 50%);
-}
-
-
-
-.overcast {
-    background-color: hsla(210, 48%, 33%, 1);
-    background-image:
-        radial-gradient(at 72% 40%, hsla(216, 16%, 24%, 0.41) 0px, transparent 50%),
-        radial-gradient(at 49% 30%, hsla(201, 51%, 43%, 1) 0px, transparent 50%),
-        radial-gradient(at 0% 0%, hsla(195, 45%, 70%, 1) 0px, transparent 50%),
-        radial-gradient(at 86% 78%, hsla(195, 14%, 46%, 1) 0px, transparent 50%);
-}
-
-.showers_scattered {
-    background-color: hsla(206, 25%, 51%, 1);
-    background-image:
-        radial-gradient(at 85% 68%, hsla(206, 40%, 35%, 0.96) 0px, transparent 50%),
-        radial-gradient(at 0% 0%, hsla(265, 7%, 57%, 0.69) 0px, transparent 50%),
-        radial-gradient(at 56% 89%, hsla(206, 61%, 22%, 1) 0px, transparent 50%),
-        radial-gradient(at 75% 27%, hsla(215, 43%, 77%, 0.47) 0px, transparent 50%),
-        radial-gradient(at 92% 12%, hsla(0, 0%, 0%, 0.87) 0px, transparent 50%),
-        radial-gradient(at 3% 66%, hsla(206, 52%, 27%, 1) 0px, transparent 50%);
-
-}
-
-.showers_large {
-    /* background: linear-gradient(127deg, rgba(134, 137, 154, 1), rgba(134, 137, 154, 0) 100%),
-        linear-gradient(217deg, rgba(134, 137, 154, 1), rgba(0, 134, 218, 1) 100%),
-        linear-gradient(336deg, rgba(134, 137, 154, 1), rgba(0, 134, 218, 1) 100%); */
-    background-color: hsla(205, 26%, 38%, 1);
-    background-image:
-        radial-gradient(at 3% 0%, hsla(240, 18%, 15%, 0.69) 0px, transparent 50%),
-        radial-gradient(at 85% 68%, hsla(210, 34%, 20%, 0.96) 0px, transparent 50%),
-        radial-gradient(at 89% 11%, hsla(213, 14%, 4%, 0.56) 0px, transparent 50%),
-        radial-gradient(at 66% 100%, hsla(206, 42%, 14%, 1) 0px, transparent 50%),
-        radial-gradient(at 19% 73%, hsla(214, 33%, 25%, 1) 0px, transparent 50%),
-        radial-gradient(at 58% 0%, hsla(209, 95%, 82%, 0.75) 0px, transparent 50%),
-        radial-gradient(at 55% 24%, hsla(195, 0%, 0%, 0.94) 0px, transparent 50%);
-
-}
-
-.storm {
-    /* background: linear-gradient(127deg, rgb(108, 123, 152), rgb(92, 92, 92)),
-        linear-gradient(217deg, rgb(108, 123, 152), rgb(92, 92, 92)),
-        linear-gradient(336deg, rgb(108, 123, 152), rgb(92, 92, 92)); */
-    background-color: hsla(211, 21%, 35%, 1);
-    background-image:
-        radial-gradient(at 43% 37%, hsla(205, 22%, 9%, 0.76) 0px, transparent 50%),
-        radial-gradient(at 38% 77%, hsla(203, 32%, 12%, 0.73) 0px, transparent 50%),
-        radial-gradient(at 98% 88%, hsla(217, 15%, 9%, 0.9) 0px, transparent 50%),
-        radial-gradient(at 67% 94%, hsla(217, 20%, 14%, 1) 0px, transparent 50%),
-        radial-gradient(at 6% 89%, hsla(17, 3%, 53%, 1) 0px, transparent 50%),
-        radial-gradient(at 99% 10%, hsla(189, 14%, 12%, 0.92) 0px, transparent 50%),
-        radial-gradient(at 17% 4%, hsla(212, 19%, 14%, 1) 0px, transparent 50%),
-        radial-gradient(at 66% 0%, hsla(213, 100%, 81%, 0.72) 0px, transparent 50%);
-
-}
-
-.snow {
-    /* background: linear-gradient(135deg, rgb(40, 60, 87) 0%, rgb(80, 104, 133) 30%, rgb(137, 166, 181) 60%, rgb(187, 195, 202) 80%, rgb(187, 195, 202) 100%),
-        linear-gradient(45deg, rgb(200, 203, 207), rgb(212, 213, 215) 50%, rgba(255, 255, 255, 0.9)); */
-    background: rgb(32, 79, 156);
-    background: linear-gradient(171deg, rgba(32, 79, 156, 1) 11%, rgba(44, 91, 145, 1) 33%, rgba(105, 133, 154, 1) 63%, rgba(213, 215, 217, 1) 97%);
-
-}
-
-.fog {
-    /* background: linear-gradient(49deg, transparent 0%, rgba(212, 195, 156, 0.43) 100%) 68% 73%/194% 147%,
-        linear-gradient(137deg, #9cafb0 0%, #c4c3be 70%, #c5c8b5 100%) 72% 55%/174% 123%; */
-    background: rgb(53, 60, 59);
-    background: linear-gradient(0deg, rgba(53, 60, 59, 1) 3%, rgba(86, 92, 93, 1) 40%, rgba(138, 142, 153, 1) 73%, rgba(197, 202, 210, 1) 100%);
-}
-
-/* ------------- night --------------- */
-
-.clear_sky_night {
-    background-color: hsla(235, 86%, 11%, 1);
-    background-image:
-        radial-gradient(at 0% 100%, hsla(32, 17%, 55%, 0.3) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, hsla(221, 14%, 33%, 0.83) 0px, transparent 50%),
-        radial-gradient(at 82% 78%, hsla(217, 83%, 14%, 0.58) 0px, transparent 50%),
-        radial-gradient(at 0% 0%, hsla(240, 92%, 10%, 1) 0px, transparent 50%);
-
-}
-
-.few_clouds_night {
-    background-color: hsla(216, 26%, 22%, 1);
-    background-image:
-        radial-gradient(at 100% 0%, hsla(221, 56%, 12%, 1) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, hsla(223, 37%, 15%, 1) 0px, transparent 50%),
-        radial-gradient(at 0% 3%, hsla(223, 35%, 17%, 1) 0px, transparent 50%);
-}
-
-.overcast_night,
-.showers_scattered_night {
-    background-color: hsla(240, 13%, 28%, 1);
-    background-image:
-        radial-gradient(at 100% 99%, hsla(240, 21%, 6%, 1) 0px, transparent 50%),
-        radial-gradient(at 99% 0%, hsla(240, 0%, 0%, 1) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, hsla(240, 19%, 9%, 1) 0px, transparent 50%),
-        radial-gradient(at 0% 0%, hsla(240, 16%, 19%, 1) 0px, transparent 50%),
-        radial-gradient(at 38% 0%, hsla(288, 13%, 80%, 0.21) 0px, transparent 50%);
-
-}
-
-.showers_large_night {
-    background-color: hsla(206, 27%, 15%, 1);
-    background-image:
-        radial-gradient(at 100% 0%, hsla(217, 17%, 7%, 1) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, hsla(203, 41%, 17%, 1) 0px, transparent 50%),
-        radial-gradient(at 0% 3%, hsla(222, 33%, 9%, 1) 0px, transparent 50%);
-
-}
-
-.storm_night {
-    background-color: hsla(245, 14%, 14%, 1);
-    background-image:
-        radial-gradient(at 100% 100%, hsla(175, 16%, 7%, 1) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, hsla(240, 21%, 6%, 1) 0px, transparent 50%),
-        radial-gradient(at 56% 0%, hsla(217, 12%, 31%, 0.81) 0px, transparent 50%),
-        radial-gradient(at 24% 0%, hsla(215, 9%, 5%, 1) 0px, transparent 50%),
-        radial-gradient(at 1% 99%, hsla(40, 15%, 54%, 0.48) 0px, transparent 50%);
-
-}
-
-.snow_night {
-    background: rgb(20, 29, 52);
-    background: linear-gradient(180deg, rgba(20, 29, 52, 1) 0%, rgba(28, 44, 64, 1) 26%, rgba(28, 45, 73, 1) 52%, rgba(63, 66, 89, 1) 78%, rgba(96, 96, 96, 1) 100%);
-}
-
-.fog_night {
-    background: linear-gradient(127deg, rgba(28, 27, 38, 1), rgba(50, 50, 50, 0) 100%),
-        linear-gradient(217deg, rgba(50, 50, 50, 1), rgba(28, 27, 38, 1) 100%);
-}
-
-/* Compact Mode Redesign */
-.compact-container {
+/* Compact mode (used when window is small) */
+.compact-window {
+    border-radius: 13px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    /* border-radius: 13px; */
+}
+
+.compact-temp {
+    font-size: 5rem;
+    font-weight: 800;
 }
 
 .compact-city {
     font-size: 1.1rem;
     font-weight: 500;
-    margin-top: 0px;
+    margin-top: 0;
 }
 
 .compact-condition-icon {
@@ -446,9 +500,8 @@
 
 .compact-detail-label {
     font-size: 0.9rem;
-    opacity: 0.7;
-    font-weight: 500;
     opacity: 0.8;
+    font-weight: 500;
 }
 
 .compact-detail-value {
@@ -460,29 +513,139 @@
     font-size: 0.9rem;
     margin-left: 10px;
     opacity: 0.8;
-    font-weight: 400;
 }
 
 .compact-date {
     font-size: 1.2rem;
     opacity: 0.9;
-    /* font-weight: 400; */
-}
-
-.compact-temp {
-    font-size: 5rem;
-    font-weight: 800;
 }
 
 .compact-raindrops {
     opacity: 0.4;
 }
 
-.compact-window {
-    border-radius: 13px;
-    transition: background-color 0.8s ease-in-out, background-image 0.8s ease-in-out;
+/* ------------------------------------------
+   WEATHER DYNAMIC BACKGROUNDS (day & night)
+   Prefix: .bg-weather-
+------------------------------------------ */
+.bg-weather-clear-sky {
+    background-color: hsla(205, 60%, 35%, 1);
+    background-image: radial-gradient(at 100% 5%, hsla(215, 43%, 77%, 0.51) 0px, transparent 50%),
+        radial-gradient(at 43% 38%, hsla(206, 47%, 45%, 0.87) 0px, transparent 50%),
+        radial-gradient(at 0% 0%, hsla(24, 1%, 83%, 0.69) 0px, transparent 50%),
+        radial-gradient(at 43% 99%, hsla(214, 71%, 36%, 0.88) 0px, transparent 50%);
+}
+
+.bg-weather-few-clouds {
+    background-color: hsla(210, 51%, 40%, 1);
+    background-image: radial-gradient(at 46% 22%, hsla(201, 54%, 45%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 0%, hsla(180, 17%, 72%, 1) 0px, transparent 50%),
+        radial-gradient(at 28% 88%, hsla(0, 0%, 74%, 0.59) 0px, transparent 50%),
+        radial-gradient(at 86% 78%, hsla(200, 19%, 59%, 1) 0px, transparent 50%);
+}
+
+.bg-weather-overcast,
+.bg-weather-showers-scattered {
+    background-color: hsla(210, 48%, 33%, 1);
+    background-image: radial-gradient(at 72% 40%, hsla(216, 16%, 24%, 0.41) 0px, transparent 50%),
+        radial-gradient(at 49% 30%, hsla(201, 51%, 43%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 0%, hsla(195, 45%, 70%, 1) 0px, transparent 50%),
+        radial-gradient(at 86% 78%, hsla(195, 14%, 46%, 1) 0px, transparent 50%);
+}
+
+.bg-weather-showers-large {
+    background-color: hsla(205, 26%, 38%, 1);
+    background-image: radial-gradient(at 3% 0%, hsla(240, 18%, 15%, 0.69) 0px, transparent 50%),
+        radial-gradient(at 85% 68%, hsla(210, 34%, 20%, 0.96) 0px, transparent 50%),
+        radial-gradient(at 89% 11%, hsla(213, 14%, 4%, 0.56) 0px, transparent 50%),
+        radial-gradient(at 66% 100%, hsla(206, 42%, 14%, 1) 0px, transparent 50%),
+        radial-gradient(at 19% 73%, hsla(214, 33%, 25%, 1) 0px, transparent 50%),
+        radial-gradient(at 58% 0%, hsla(209, 95%, 82%, 0.75) 0px, transparent 50%),
+        radial-gradient(at 55% 24%, hsla(195, 0%, 0%, 0.94) 0px, transparent 50%);
+}
+
+.bg-weather-storm {
+    background-color: hsla(211, 21%, 35%, 1);
+    background-image: radial-gradient(at 43% 37%, hsla(205, 22%, 9%, 0.76) 0px, transparent 50%),
+        radial-gradient(at 38% 77%, hsla(203, 32%, 12%, 0.73) 0px, transparent 50%),
+        radial-gradient(at 98% 88%, hsla(217, 15%, 9%, 0.9) 0px, transparent 50%),
+        radial-gradient(at 67% 94%, hsla(217, 20%, 14%, 1) 0px, transparent 50%),
+        radial-gradient(at 6% 89%, hsla(17, 3%, 53%, 1) 0px, transparent 50%),
+        radial-gradient(at 99% 10%, hsla(189, 14%, 12%, 0.92) 0px, transparent 50%),
+        radial-gradient(at 17% 4%, hsla(212, 19%, 14%, 1) 0px, transparent 50%),
+        radial-gradient(at 66% 0%, hsla(213, 100%, 81%, 0.72) 0px, transparent 50%);
+}
+
+.bg-weather-snow {
+    background: linear-gradient(171deg, rgba(32, 79, 156, 1) 11%, rgba(44, 91, 145, 1) 33%, rgba(105, 133, 154, 1) 63%, rgba(213, 215, 217, 1) 97%);
+}
+
+.bg-weather-fog {
+    background: linear-gradient(0deg, rgba(53, 60, 59, 1) 3%, rgba(86, 92, 93, 1) 40%, rgba(138, 142, 153, 1) 73%, rgba(197, 202, 210, 1) 100%);
+}
+
+/* Night variants */
+.bg-weather-clear-sky-night {
+    background-color: hsla(235, 86%, 11%, 1);
+    background-image: radial-gradient(at 0% 100%, hsla(32, 17%, 55%, 0.3) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, hsla(221, 14%, 33%, 0.83) 0px, transparent 50%),
+        radial-gradient(at 82% 78%, hsla(217, 83%, 14%, 0.58) 0px, transparent 50%),
+        radial-gradient(at 0% 0%, hsla(240, 92%, 10%, 1) 0px, transparent 50%);
+}
+
+.bg-weather-few-clouds-night {
+    background-color: hsla(216, 26%, 22%, 1);
+    background-image: radial-gradient(at 100% 0%, hsla(221, 56%, 12%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, hsla(223, 37%, 15%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 3%, hsla(223, 35%, 17%, 1) 0px, transparent 50%);
+}
+
+.bg-weather-overcast-night,
+.bg-weather-showers-scattered-night {
+    background-color: hsla(240, 13%, 28%, 1);
+    background-image: radial-gradient(at 100% 99%, hsla(240, 21%, 6%, 1) 0px, transparent 50%),
+        radial-gradient(at 99% 0%, hsla(240, 0%, 0%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, hsla(240, 19%, 9%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 0%, hsla(240, 16%, 19%, 1) 0px, transparent 50%),
+        radial-gradient(at 38% 0%, hsla(288, 13%, 80%, 0.21) 0px, transparent 50%);
+}
+
+.bg-weather-showers-large-night {
+    background-color: hsla(206, 27%, 15%, 1);
+    background-image: radial-gradient(at 100% 0%, hsla(217, 17%, 7%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, hsla(203, 41%, 17%, 1) 0px, transparent 50%),
+        radial-gradient(at 0% 3%, hsla(222, 33%, 9%, 1) 0px, transparent 50%);
+}
+
+.bg-weather-storm-night {
+    background-color: hsla(245, 14%, 14%, 1);
+    background-image: radial-gradient(at 100% 100%, hsla(175, 16%, 7%, 1) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, hsla(240, 21%, 6%, 1) 0px, transparent 50%),
+        radial-gradient(at 56% 0%, hsla(217, 12%, 31%, 0.81) 0px, transparent 50%),
+        radial-gradient(at 24% 0%, hsla(215, 9%, 5%, 1) 0px, transparent 50%),
+        radial-gradient(at 1% 99%, hsla(40, 15%, 54%, 0.48) 0px, transparent 50%);
+}
+
+.bg-weather-snow-night {
+    background: linear-gradient(180deg, rgba(20, 29, 52, 1) 0%, rgba(28, 44, 64, 1) 26%, rgba(28, 45, 73, 1) 52%, rgba(63, 66, 89, 1) 78%, rgba(96, 96, 96, 1) 100%);
+}
+
+.bg-weather-fog-night {
+    background: linear-gradient(127deg, rgba(28, 27, 38, 1), rgba(50, 50, 50, 0) 100%),
+        linear-gradient(217deg, rgba(50, 50, 50, 1), rgba(28, 27, 38, 1) 100%);
+}
+
+/* ------------------------------------------
+   UTILITIES (misc)
+------------------------------------------ */
+.hide {
+    opacity: 0.2;
 }
 
 .dynamic-bg {
     background-color: transparent;
+}
+
+.app-body {
+    padding: 20px;
 }

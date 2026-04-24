@@ -12,11 +12,11 @@ from .UI_CompDrawBar import DrawLevelBar
 from .UI_CompDrawImageIcon import DrawImage
 
 # Standardizing CSS classes for reuse
-CSS_CARD_BASE = ["view", "card", "custom_card"]
-CSS_TEXT_TITLE = ["text-4", "light-3", "bold"]
-CSS_TEXT_VALUE = ["text-2a", "bold"]
-CSS_TEXT_UNIT = ["text-7", "light-3"]
-CSS_TEXT_DESC = ["text-5", "light-2", "bold-2"]
+CSS_CARD_BASE = ["view", "card"]
+CSS_TEXT_TITLE = ["text-lg", "opacity-80", "font-medium"]
+CSS_TEXT_VALUE = ["text-3xl", "font-medium"]
+CSS_TEXT_UNIT = ["text-sm", "opacity-80"]
+CSS_TEXT_DESC = ["text-base", "opacity-90", "font-semibold"]
 
 
 class CardSquare:
@@ -79,7 +79,7 @@ class CardSquare:
         card_box.set_margin_end(3)
 
         if settings.is_using_dynamic_bg:
-            card_box.add_css_class("transparent_5")
+            card_box.add_css_class("bg-dark-overlay")
 
         # 2. Title Area
         display_title = self.TITLES_MAP.get(self.title_key, self.title_key.capitalize())
@@ -128,13 +128,13 @@ class CardSquare:
 
             if self.sub_desc_heading:
                 lbl_head = Gtk.Label(label=self.sub_desc_heading)
-                lbl_head.set_css_classes(["text-6", "light-1"])
+                lbl_head.set_css_classes(["text-sm", "opacity-95"])
                 lbl_head.set_halign(Gtk.Align.START)
                 sub_box.append(lbl_head)
 
             if self.sub_desc:
                 lbl_sub = Gtk.Label(label=self.sub_desc)
-                lbl_sub.set_css_classes(["text-4", "bold-2"])
+                lbl_sub.set_css_classes(["text-lg", "font-semibold"])
                 lbl_sub.set_halign(Gtk.Align.START)
                 sub_box.append(lbl_sub)
 
@@ -149,7 +149,7 @@ class CardSquare:
         # Upper Text (N, High, etc)
         if self.text_up:
             lbl_up = Gtk.Label(label=self.text_up)
-            css = ["text-4", "bold-3"] if self.title_key == "wind" else ["title-5"]
+            css = ["text-lg", "font-medium"] if self.title_key == "wind" else ["text-base"]
             lbl_up.set_css_classes(css)
             visual_box.append(lbl_up)
 
@@ -161,7 +161,7 @@ class CardSquare:
         # Lower Text
         if self.text_low:
             lbl_low = Gtk.Label(label=self.text_low)
-            css = ["text-4", "bold"] if self.title_key == "wind" else ["title-5"]
+            css = ["text-lg", "font-medium"] if self.title_key == "wind" else ["text-base"]
             lbl_low.set_css_classes(css)
             visual_box.append(lbl_low)
 

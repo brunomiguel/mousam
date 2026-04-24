@@ -159,16 +159,16 @@ class CompactWeather(Gtk.Overlay):
 
         lbl_city = Gtk.Label(label=city_name)
         lbl_city.set_halign(Gtk.Align.START)
-        lbl_city.add_css_class("text-2a")
-        lbl_city.add_css_class("bold-1")
-        lbl_city.add_css_class("light-2")
+        lbl_city.add_css_class("text-3xl")
+        lbl_city.add_css_class("font-bold")
+        lbl_city.add_css_class("opacity-90")
         grid.attach(lbl_city, 0, 0, 1, 1)
 
         # Condition
         weather_code = data.weathercode.get("data", 0)
         lbl_cond = Gtk.Label(label=condition.get(str(weather_code), condition.get("0", "Unknown")))
         lbl_cond.set_halign(Gtk.Align.START)
-        lbl_cond.add_css_class("text-3")
+        lbl_cond.add_css_class("text-xl")
         grid.attach(lbl_cond, 0, 1, 1, 1)
 
         # Weather Icon

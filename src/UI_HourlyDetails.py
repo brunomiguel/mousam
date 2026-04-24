@@ -22,10 +22,10 @@ class HourlyDetails(Gtk.Grid):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_hexpand(True)
-        self.set_css_classes(["view", "card", "custom_card"])
+        self.set_css_classes(["view", "card"])
 
         if settings.is_using_dynamic_bg:
-            self.add_css_class("transparent_5")
+            self.add_css_class("bg-dark-overlay")
 
         self.set_margin_top(10)
         self.set_margin_start(3)
@@ -57,7 +57,7 @@ class HourlyDetails(Gtk.Grid):
         for label, page_name in button_data:
             button = Gtk.ToggleButton.new_with_label(_(label))
             button.set_size_request(80, 16)
-            button.set_css_classes(["btn_sm"])
+            button.set_css_classes(["btn-sm"])
             if first_btn is None:
                 first_btn = button
             else:
@@ -123,18 +123,17 @@ class HourlyDetails(Gtk.Grid):
     def _build_info_header(self, page_name, hourly_data):
         """Builds the top info grid with highlights (Day Max/High)."""
         info_grid = Gtk.Grid(margin_start=10, margin_top=20, margin_bottom=5, column_spacing=5)
-        info_grid.set_css_classes(["card_infos"])
 
         self.desc_label = Gtk.Label()
-        self.desc_label.set_css_classes(["text-4", "light-3", "bold-3"])
+        self.desc_label.set_css_classes(["text-lg", "opacity-80", "font-medium"])
         info_grid.attach(self.desc_label, 0, 0, 1, 2)
 
         self.val_label = Gtk.Label(halign=Gtk.Align.START)
-        self.val_label.set_css_classes(["text-3", "light-3", "bold-1"])
+        self.val_label.set_css_classes(["text-xl", "opacity-80", "font-bold"])
         info_grid.attach(self.val_label, 1, 0, 2, 2)
 
         self.unit_label = Gtk.Label()
-        self.unit_label.set_css_classes(["text-5", "light-2", "bold-3"])
+        self.unit_label.set_css_classes(["text-base", "opacity-90", "font-medium"])
         info_grid.attach(self.unit_label, 3, 0, 1, 2)
 
         # Dispatch to specialized header builders
@@ -201,7 +200,7 @@ class HourlyDetails(Gtk.Grid):
         """Factory method for creating an hour card."""
         item_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=4, margin_end=4)
         item_box.set_size_request(-1, 120)
-        item_box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
+        item_box.set_css_classes(["card-hourly", "bg-light-gray"])
 
         # Add time label
         self._add_time_label(item_box, index, hourly_data, nearest_idx)
@@ -211,7 +210,7 @@ class HourlyDetails(Gtk.Grid):
         item_box.append(icon_box)
         
         val_label = Gtk.Label()
-        val_label.set_css_classes(["text-5", "bold-2", "light-3"])
+        val_label.set_css_classes(["text-base", "font-semibold", "opacity-80"])
         item_box.append(val_label)
 
         # Specialized setup
@@ -230,11 +229,11 @@ class HourlyDetails(Gtk.Grid):
         time_str = dt.strftime("%H:%M") if settings.is_using_24h_clock else dt.strftime("%I:%M %p")
         
         label = Gtk.Label(label=time_str)
-        label.set_css_classes(["text-7", "bold-2", "light-6"])
+        label.set_css_classes(["text-sm", "font-semibold", "opacity-60"])
         if index == nearest_idx:
             label.set_text(_("Now"))
-            label.add_css_class("bold-1")
-            box.add_css_class("custom_card_hourly_now")
+            label.add_css_class("font-bold")
+            box.add_css_class("card-hourly-now")
         box.append(label)
 
     def _setup_temp_item(self, icon_box, val_label, index, hourly_data):
@@ -274,7 +273,7 @@ class HourlyDetails(Gtk.Grid):
     def _create_empty_prec_widget(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=3, margin_end=3, hexpand=True)
         box.set_size_request(-1, 120)
-        box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
+        box.set_css_classes(["card-hourly", "bg-light-gray"])
         
         msgs = [
             _("No precipitation today !"),
@@ -285,7 +284,7 @@ class HourlyDetails(Gtk.Grid):
             _("No rain in sight today!"),
         ]
         label = Gtk.Label(label=random.choice(msgs))
-        label.set_css_classes(["text-a", "bold-3", "light-2"])
+        label.set_css_classes(["text-base", "font-medium", "opacity-90"])
         label.set_margin_top(40)
         label.set_margin_bottom(30)
         box.append(label)

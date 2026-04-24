@@ -64,7 +64,7 @@ class WeatherPreferences(Adw.PreferencesWindow):
 
         btn_24h = Gtk.ToggleButton.new_with_label(_("24 Hour"))
         btn_24h.set_size_request(80, 20)
-        btn_24h.set_css_classes(["btn_sm"])
+        btn_24h.set_css_classes(["btn-sm"])
         btn_24h.do_clicked(btn_24h)
         style_buttons_box.append(btn_24h)
         btn_24h.connect("clicked", self._on_click_use_24h_clock, True)
