@@ -10,6 +10,7 @@ from .constants import icons, icon_loc
 from .UI_CompDrawImageIcon import DrawImage
 from .UI_CompDrawbarLine import DrawBar
 from .config import settings
+from .utils import weak_connect
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -21,14 +22,13 @@ class HourlyDetails(Gtk.Grid):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_hexpand(True)
-        self.set_css_classes(["view", "card", "custom_card"])
+        self.set_css_classes(["view", "card"])
 
         if settings.is_using_dynamic_bg:
-            self.add_css_class("transparent_5")
+            self.add_css_class("bg-dark-overlay")
 
         self.set_margin_top(10)
         self.set_margin_start(3)
-        self._signal_handlers = []  # [(widget, handler_id)] for cleanup
         self.paint_ui()
         self.daily_forecast = None
         self.scrolled_window = None
@@ -57,14 +57,14 @@ class HourlyDetails(Gtk.Grid):
         for label, page_name in button_data:
             button = Gtk.ToggleButton.new_with_label(_(label))
             button.set_size_request(80, 16)
-            button.set_css_classes(["btn_sm"])
+            button.set_css_classes(["btn-sm"])
             if first_btn is None:
                 first_btn = button
             else:
                 button.set_group(first_btn)
             style_buttons_box.append(button)
-            hid = button.connect("clicked", self._on_btn_clicked, page_name)
-            self._signal_handlers.append((button, hid))
+            button._page_name = page_name  # store for use in handler
+            weak_connect(button, "clicked", self._on_btn_clicked)
 
         # Initialize with first tab
         if first_btn:
@@ -73,8 +73,11 @@ class HourlyDetails(Gtk.Grid):
         
         tab_box.append(style_buttons_box)
 
-    def _on_btn_clicked(self, widget, page_name):
+    def _on_btn_clicked(self, widget):
         if widget.get_active():
+            page_name = getattr(widget, "_page_name", None)
+            if not page_name:
+                return
             if self.hourly_stack.get_child_by_name(page_name):
                 self.hourly_stack.set_visible_child_name(page_name)
             else:
@@ -120,18 +123,17 @@ class HourlyDetails(Gtk.Grid):
     def _build_info_header(self, page_name, hourly_data):
         """Builds the top info grid with highlights (Day Max/High)."""
         info_grid = Gtk.Grid(margin_start=10, margin_top=20, margin_bottom=5, column_spacing=5)
-        info_grid.set_css_classes(["card_infos"])
 
         self.desc_label = Gtk.Label()
-        self.desc_label.set_css_classes(["text-4", "light-3", "bold-3"])
+        self.desc_label.set_css_classes(["text-lg", "opacity-80", "font-medium"])
         info_grid.attach(self.desc_label, 0, 0, 1, 2)
 
         self.val_label = Gtk.Label(halign=Gtk.Align.START)
-        self.val_label.set_css_classes(["text-3", "light-3", "bold-1"])
+        self.val_label.set_css_classes(["text-xl", "opacity-80", "font-bold"])
         info_grid.attach(self.val_label, 1, 0, 2, 2)
 
         self.unit_label = Gtk.Label()
-        self.unit_label.set_css_classes(["text-5", "light-2", "bold-3"])
+        self.unit_label.set_css_classes(["text-base", "opacity-90", "font-medium"])
         info_grid.attach(self.unit_label, 3, 0, 1, 2)
 
         # Dispatch to specialized header builders
@@ -175,8 +177,7 @@ class HourlyDetails(Gtk.Grid):
 
         controller = Gtk.EventControllerScroll.new(Gtk.EventControllerScrollFlags.BOTH_AXES)
         scrolled_window.add_controller(controller)
-        hid = controller.connect("scroll", self.on_scroll)
-        self._signal_handlers.append((controller, hid))
+        weak_connect(controller, "scroll", self.on_scroll)
 
         graphic_container = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         scrolled_window.set_child(graphic_container)
@@ -199,7 +200,7 @@ class HourlyDetails(Gtk.Grid):
         """Factory method for creating an hour card."""
         item_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=4, margin_end=4)
         item_box.set_size_request(-1, 120)
-        item_box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
+        item_box.set_css_classes(["card-hourly", "bg-light-gray"])
 
         # Add time label
         self._add_time_label(item_box, index, hourly_data, nearest_idx)
@@ -209,7 +210,7 @@ class HourlyDetails(Gtk.Grid):
         item_box.append(icon_box)
         
         val_label = Gtk.Label()
-        val_label.set_css_classes(["text-5", "bold-2", "light-3"])
+        val_label.set_css_classes(["text-base", "font-semibold", "opacity-80"])
         item_box.append(val_label)
 
         # Specialized setup
@@ -228,11 +229,11 @@ class HourlyDetails(Gtk.Grid):
         time_str = dt.strftime("%H:%M") if settings.is_using_24h_clock else dt.strftime("%I:%M %p")
         
         label = Gtk.Label(label=time_str)
-        label.set_css_classes(["text-7", "bold-2", "light-6"])
+        label.set_css_classes(["text-sm", "font-semibold", "opacity-60"])
         if index == nearest_idx:
             label.set_text(_("Now"))
-            label.add_css_class("bold-1")
-            box.add_css_class("custom_card_hourly_now")
+            label.add_css_class("font-bold")
+            box.add_css_class("card-hourly-now")
         box.append(label)
 
     def _setup_temp_item(self, icon_box, val_label, index, hourly_data):
@@ -272,7 +273,7 @@ class HourlyDetails(Gtk.Grid):
     def _create_empty_prec_widget(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=3, margin_end=3, hexpand=True)
         box.set_size_request(-1, 120)
-        box.set_css_classes(["custom_card_hourly", "bg_light_grey"])
+        box.set_css_classes(["card-hourly", "bg-light-gray"])
         
         msgs = [
             _("No precipitation today !"),
@@ -283,7 +284,7 @@ class HourlyDetails(Gtk.Grid):
             _("No rain in sight today!"),
         ]
         label = Gtk.Label(label=random.choice(msgs))
-        label.set_css_classes(["text-a", "bold-3", "light-2"])
+        label.set_css_classes(["text-base", "font-medium", "opacity-90"])
         label.set_margin_top(40)
         label.set_margin_bottom(30)
         box.append(label)
@@ -302,12 +303,6 @@ class HourlyDetails(Gtk.Grid):
             offset = (width / 24) * (index - 1)
             scrolled.get_hadjustment().set_value(offset)
 
-    def cleanup(self):
-        """Disconnect all self-referential signal handlers to break GObject↔Python cycles."""
-        for widget, handler_id in self._signal_handlers:
-            if widget.handler_is_connected(handler_id):
-                widget.disconnect(handler_id)
-        self._signal_handlers.clear()
 
     def on_scroll(self, controller, dx, dy):
         hadj = self.scrolled_window.get_hadjustment()

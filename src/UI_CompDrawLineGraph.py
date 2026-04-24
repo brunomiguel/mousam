@@ -14,7 +14,9 @@ class LineGraph:
         self.color = color
         self.dw = Gtk.DrawingArea()
         self.dw.set_size_request(260, 120) # Increased height for date labels
-        self.dw.set_draw_func(self.draw, None)
+        
+        from .utils import safe_set_draw_func
+        safe_set_draw_func(self.dw, self, "draw")
 
     def draw(self, area, ctx, width, height, data):
         if not self.values or len(self.values) < 2:

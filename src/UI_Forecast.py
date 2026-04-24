@@ -21,6 +21,7 @@ import threading
 from .constants import icons
 from .config import settings
 from .CORE_weatherData import fetch_hourly_forecast, fetch_daily_forecast
+from .utils import weak_connect
 
 
 
@@ -79,7 +80,6 @@ class Forecast(Gtk.Grid):
         """
         super().__init__(*args, **kwargs)
 
-        self._signal_handlers = []  # [(widget, handler_id)] for cleanup
         self._setup_styling()
         self._build_ui()
 
@@ -90,9 +90,9 @@ class Forecast(Gtk.Grid):
         self.set_margin_start(6)
         self.set_margin_end(3)
 
-        self.set_css_classes(["view", "card", "custom_card"])
+        self.set_css_classes(["view", "card"])
         if settings.is_using_dynamic_bg:
-            self.add_css_class("transparent_5")
+            self.add_css_class("bg-dark-overlay")
 
     def _build_ui(self) -> None:
         """
@@ -139,29 +139,21 @@ class Forecast(Gtk.Grid):
         # Tomorrow button
         tomorrow_btn = Gtk.ToggleButton.new_with_label(_("Tomorrow"))
         tomorrow_btn.set_size_request(self.ITEM_WIDTH_REQUEST, self.ITEM_HEIGHT_REQUEST)
-        tomorrow_btn.set_css_classes(["btn_sm"])
+        tomorrow_btn.set_css_classes(["btn-sm"])
         tomorrow_btn.set_active(True)
-        hid = tomorrow_btn.connect("clicked", self._on_tomorrow_clicked)
-        self._signal_handlers.append((tomorrow_btn, hid))
+        weak_connect(tomorrow_btn, "clicked", self._on_tomorrow_clicked)
         button_bar.append(tomorrow_btn)
 
         # Weekly button (grouped with tomorrow)
         weekly_btn = Gtk.ToggleButton.new_with_label(_("Weekly"))
         weekly_btn.set_size_request(self.ITEM_WIDTH_REQUEST, self.ITEM_HEIGHT_REQUEST)
-        weekly_btn.set_css_classes(["btn_sm"])
+        weekly_btn.set_css_classes(["btn-sm"])
         weekly_btn.set_group(tomorrow_btn)
-        hid = weekly_btn.connect("clicked", self._on_weekly_clicked)
-        self._signal_handlers.append((weekly_btn, hid))
+        weak_connect(weekly_btn, "clicked", self._on_weekly_clicked)
         button_bar.append(weekly_btn)
 
         return button_bar
 
-    def cleanup(self) -> None:
-        """Disconnect all self-referential signal handlers to break GObject↔Python cycles."""
-        for widget, handler_id in self._signal_handlers:
-            if widget.handler_is_connected(handler_id):
-                widget.disconnect(handler_id)
-        self._signal_handlers.clear()
 
     def _on_tomorrow_clicked(self, _widget: Gtk.ToggleButton) -> None:
         """Handle click on Tomorrow button."""
@@ -284,7 +276,7 @@ class Forecast(Gtk.Grid):
             Gtk.Grid: A grid widget containing the forecast item.
         """
         grid = Gtk.Grid(hexpand=True, margin_top=self.FORECAST_ITEM_MARGIN)
-        grid.set_css_classes(["bg_light_grey", "custom_card_forecast_item"])
+        grid.set_css_classes(["bg-light-gray", "card-forecast-item"])
 
         # Extract common data
         timestamp = data_source.time.get("data")[index]
@@ -334,7 +326,7 @@ class Forecast(Gtk.Grid):
         box = Gtk.Box()
         box.set_size_request(self.LABEL_BOX_WIDTH, self.LABEL_BOX_HEIGHT)
         label = Gtk.Label(label=text, halign=Gtk.Align.START)
-        label.set_css_classes(["text-5", "bold-4", "light-2"])
+        label.set_css_classes(["text-base", "font-normal", "opacity-90"])
         box.append(label)
         grid.attach(box, 0, 0, 1, 1)
 
@@ -368,13 +360,13 @@ class Forecast(Gtk.Grid):
 
         # Max temperature
         max_label = Gtk.Label(label=f"{temp_max:.0f}° ", margin_start=4)
-        max_label.set_css_classes(["text-4", "bold-2"])
+        max_label.set_css_classes(["text-lg", "font-semibold"])
         temp_grid.attach(max_label, 1, 0, 1, 1)
 
         # Min temperature (if provided)
         if temp_min is not None:
             min_label = Gtk.Label(label=f" {temp_min:.0f}°", margin_top=5)
-            min_label.set_css_classes(["light-5"])
+            min_label.set_css_classes(["opacity-70"])
             temp_grid.attach(min_label, 1, 1, 1, 1)
 
     @staticmethod

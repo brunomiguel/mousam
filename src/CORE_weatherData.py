@@ -91,6 +91,20 @@ def fetch_current_air_pollution():
     global air_apllution_data
     obj = AirPollution()
     air_apllution_data = obj._get_current_air_pollution(*get_cords())
+    
+    # Process current AQI
+    hourly_time_list = air_apllution_data.get("hourly").get("time")
+    nearest_idx = 0
+    now_ts = time.time()
+    for i, ts in enumerate(hourly_time_list):
+        if abs(now_ts - ts) < 1800: # within 30 mins
+            nearest_idx = i
+            break
+            
+    # Add processed current values to a dict for easy access
+    air_apllution_data["current_us_aqi"] = air_apllution_data.get("hourly").get("us_aqi")[nearest_idx]
+    air_apllution_data["current_eu_aqi"] = air_apllution_data.get("hourly").get("european_aqi")[nearest_idx]
+    
     return air_apllution_data
 
 

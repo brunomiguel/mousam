@@ -66,15 +66,15 @@ class CardAirPollution:
         self.card = card
         card.halign = Gtk.Align.FILL
         card.set_row_spacing(5)
-        card.set_css_classes(["view", "card", "custom_card"])
+        card.set_css_classes(["view", "card"])
         if settings.is_using_dynamic_bg:
-            card.add_css_class("transparent_5")
+            card.add_css_class("bg-dark-overlay")
 
         # Main title of the card
         title = Gtk.Label(label=_("Air Pollution"))
         title.set_hexpand(True)
         title.set_halign(Gtk.Align.START)
-        title.set_css_classes(["text-4", "light-3", "bold"])
+        title.set_css_classes(["text-lg", "opacity-80", "font-medium"])
         card.attach(title, 0, 0, 4, 2)
 
         # Info button with Popover
@@ -82,7 +82,7 @@ class CardAirPollution:
         info_button.set_icon_name("help-about-symbolic")
         info_button.set_halign(Gtk.Align.END)
         info_button.set_valign(Gtk.Align.START)
-        info_button.set_css_classes(["flat", "circular", "light-4"])
+        info_button.set_css_classes(["flat", "circular", "opacity-75"])
         info_button.set_tooltip_text(_("Air Quality Components"))
         card.attach(info_button, 3, 0, 1, 2)
 
@@ -98,7 +98,7 @@ class CardAirPollution:
         info_box.set_margin_top(10)
 
         main_val = Gtk.Label(label=self.air_apllution_data["hourly"]["us_aqi"][idx])
-        main_val.set_css_classes(["text-l4", "bold"])
+        main_val.set_css_classes(["text-5xl", "font-medium"])
         main_val.set_halign(Gtk.Align.START)
         main_val.set_margin_end(10)
         info_box.append(main_val)
@@ -106,7 +106,7 @@ class CardAirPollution:
         desc = Gtk.Label(
             label=self.classify_aqi(self.air_apllution_data["hourly"]["us_aqi"][idx])
         )
-        desc.set_css_classes(["text-3", "light-2", "bold-2"])
+        desc.set_css_classes(["text-xl", "opacity-90", "font-semibold"])
         desc.set_margin_bottom(0)
         desc.set_valign(Gtk.Align.END)
         desc.set_halign(Gtk.Align.START)
@@ -131,7 +131,7 @@ class CardAirPollution:
         popover_content.set_size_request(280, -1)
 
         popover_title = Gtk.Label(label=_("Air Quality Index Trend"))
-        popover_title.set_css_classes(["text-4", "bold"])
+        popover_title.set_css_classes(["text-lg", "font-medium"])
         popover_title.set_halign(Gtk.Align.START)
         popover_content.append(popover_title)
 
@@ -195,11 +195,11 @@ class CardAirPollution:
                 # Value label
                 val_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
                 val_label = Gtk.Label(label=str(val))
-                val_label.add_css_class("bold")
+                val_label.add_css_class("font-medium")
 
                 unit_label = Gtk.Label(label=unit)
                 unit_label.add_css_class("dim-label")
-                unit_label.add_css_class("text-8")
+                unit_label.add_css_class("text-sm")
 
                 val_box.append(val_label)
                 val_box.append(unit_label)

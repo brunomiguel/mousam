@@ -1,25 +1,28 @@
-import socket
+import gi
 import datetime
 import time
 import json
-import gi
-from .config import settings
 import requests
+import socket
+import weakref
+import functools
+from threading import Lock
+from collections import OrderedDict
+from typing import Callable, Optional, Any
+
+
 from typing import List, Optional
 from zoneinfo import ZoneInfo  # Python 3.9+ internal library
-import functools
-from collections import OrderedDict
-from threading import Lock
-from typing import Callable, Optional, Any, Union
+from .config import settings
 
 gi.require_version("Adw", "1")
-from gi.repository import Adw
+from gi.repository import  Adw, GLib
 
 # ----------------------------------------------------------------------
 # Cache for internet connection status
 # ----------------------------------------------------------------------
 INTERNET_CACHE_TTL = 120  # seconds
-DATA_CACHE_TTL =60
+DATA_CACHE_TTL = 60
 DATA_MAX_ENTRIES = 128
 DEFAULT_TIMEZONE = "UTC"
 _internet_cache = {"timestamp": 0.0, "status": False}
@@ -249,3 +252,116 @@ class cached:
         wrapper.cache_info = cache_info
         wrapper.cache_clear = cache_clear
         return wrapper
+
+class AutoRefreshTimer:
+    """
+    Manages auto-refresh intervals using GLib timeouts.
+    """
+    def __init__(self, callback: Callable):
+        self._timer_id = None
+        self._callback = callback
+
+    def setup(self):
+        self.stop()
+        interval = settings.auto_refresh_interval
+        if interval > 0:
+            self._timer_id = GLib.timeout_add_seconds(
+                interval * 60, self._on_tick
+            )
+
+    def stop(self):
+        if self._timer_id is not None:
+            GLib.source_remove(self._timer_id)
+            self._timer_id = None
+
+    def _on_tick(self):
+        self._callback()
+        return GLib.SOURCE_CONTINUE
+
+
+
+def safe_set_draw_func(drawing_area, obj, draw_method_name):
+    """
+    Sets a draw function on a Gtk.DrawingArea without creating a strong reference cycle.
+    """
+    # Keep obj alive in Python-space exactly as long as the drawing_area wrapper exists.
+    # Python's cyclic GC will handle this perfectly once the drawing_area is removed from the UI.
+    drawing_area._keep_alive_obj = obj
+    
+    weak_obj = weakref.ref(obj)
+    def wrapper(area, cr, width, height, _user_data):
+        target = weak_obj()
+        if target:
+            method = getattr(target, draw_method_name, None)
+            if method:
+                method(area, cr, width, height, _user_data)
+    drawing_area.set_draw_func(wrapper, None)
+
+def weak_connect(widget, signal_name, bound_method):
+    """
+    Connects a signal without creating a strong reference cycle.
+    """
+    weak_self = weakref.ref(bound_method.__self__)
+    func_name = bound_method.__name__
+    
+    def wrapper(*args, **kwargs):
+        target = weak_self()
+        if target:
+            method = getattr(target, func_name, None)
+            if method:
+                return method(*args, **kwargs)
+                
+    return widget.connect(signal_name, wrapper)
+
+
+def fetch_all_weather_data_async(on_success=None, on_error=None):
+    """
+    Fetches all weather data in a thread-safe manner, avoiding race conditions.
+    Runs current_weather fetch sequentially before hourly/daily/pollution fetches.
+    """
+    import threading
+    from .CORE_weatherData import (
+        fetch_current_weather,
+        fetch_hourly_forecast,
+        fetch_daily_forecast,
+        fetch_current_air_pollution
+    )
+
+    def _worker():
+        try:
+            # cwd : current_weather_data
+            # cwt : current_weather_thread
+            cwd = threading.Thread(target=fetch_current_weather, name="cwt")
+            cwd.start()
+            cwd.join()
+
+            hfd = threading.Thread(target=fetch_hourly_forecast, name="hft")
+            hfd.start()
+
+            dfd = threading.Thread(target=fetch_daily_forecast, name="dft")
+            dfd.start()
+
+            apd = threading.Thread(target=fetch_current_air_pollution, name="apt")
+            apd.start()
+
+            local_time = threading.Thread(
+                target=get_time_difference, args=("", True), name="local_time"
+            )
+            local_time.start()
+
+            hfd.join()
+            dfd.join()
+            apd.join()
+            local_time.join()
+            
+            if on_success:
+                GLib.idle_add(on_success)
+        except Exception as e:
+            print(f"Error fetching data: {e}")
+            if on_error:
+                GLib.idle_add(on_error, str(e))
+
+    if not any(t.name == "fetch_all_worker" for t in threading.enumerate()):
+        threading.Thread(target=_worker, name="fetch_all_worker", daemon=True).start()
+
+

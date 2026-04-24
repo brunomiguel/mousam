@@ -50,7 +50,7 @@ class CurrentCondition(Gtk.Grid):
             halign=Gtk.Align.START,
             valign=Gtk.Align.END,
         )
-        cond_label.set_css_classes(["text-2b", "light-4", "bold-2"])
+        cond_label.set_css_classes(["text-2xl", "opacity-75", "font-semibold"])
         condition_grid.attach(cond_label, 1, 0, 1, 1)
 
         # Condition temperature
@@ -61,7 +61,7 @@ class CurrentCondition(Gtk.Grid):
             halign=Gtk.Align.START,
             valign=Gtk.Align.START,
         )
-        main_temp_label.set_css_classes(["main_temp_label", "bold-1"])
+        main_temp_label.set_css_classes(["text-6xl", "font-bold"])
         condition_grid.attach(main_temp_label, 1, 1, 1, 1)
 
         # ========== right  section ==========
@@ -84,13 +84,13 @@ class CurrentCondition(Gtk.Grid):
         loc_label_city = Gtk.Label(
             label=city_info.get("name"), halign=Gtk.Align.END, margin_bottom=1
         )
-        loc_label_city.set_css_classes(["text-2b", "bold-2"])
+        loc_label_city.set_css_classes(["text-2xl", "font-semibold"])
         box_label.append(loc_label_city)
 
         loc_label_country = Gtk.Label(
             label=city_info.get("country"), valign=Gtk.Align.END, halign=Gtk.Align.END
         )
-        loc_label_country.set_css_classes(["text-4", "light-3"])
+        loc_label_country.set_css_classes(["text-lg", "opacity-80"])
         box_label.append(loc_label_country)
 
         feels_like_label = Gtk.Label(halign=Gtk.Align.END, margin_bottom=5)
@@ -98,7 +98,7 @@ class CurrentCondition(Gtk.Grid):
             data.apparent_temperature.get("data"), data.apparent_temperature.get("unit")
         )
         feels_like_label.set_markup(markup_text)
-        feels_like_label.set_css_classes(["text-5", "bold-3d"])
+        feels_like_label.set_css_classes(["text-base", "font-medium"])
         box_right.append(feels_like_label)
 
         # visibility_label = Gtk.Label(halign=Gtk.Align.END, margin_bottom=5)
