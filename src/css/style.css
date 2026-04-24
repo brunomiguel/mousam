@@ -480,6 +480,7 @@
 
 .compact-window {
     border-radius: 13px;
+    transition: background-color 0.8s ease-in-out, background-image 0.8s ease-in-out;
 }
 
 .dynamic-bg {
