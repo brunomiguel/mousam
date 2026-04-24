@@ -377,19 +377,30 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         page.set_title(title)
         return page
 
-    def _use_dynamic_bg(self, weather_code: int = 0, is_day: int = 1):
-        if not settings.is_using_dynamic_bg:
-            return
+    def _use_dynamic_bg(self, weather_code: int = 0, is_day: int = 1) -> None:
+        # Always required classes
+        required = {"background", "csd"}
+        
+        # Add weather class if dynamic backgrounds are on
+        if settings.is_using_dynamic_bg:
+            key = f"{weather_code}{'' if is_day else 'n'}"
+            if weather_cls := bg_css.get(key):
+                required.add(weather_cls)
+        
+        current = set(self.get_css_classes())
+        weather_classes = set(bg_css.values())
+        
+        # Keep all non-weather classes, but enforce the required ones
+        target = (current - weather_classes) | required
+        
+        # Sync current classes to target
+        # classes that are currently on the widget but not in the target. These need to be removed.
+        for cls in current - target:
+            self.remove_css_class(cls)
 
-        for cl in self.get_css_classes():
-            if cl not in ["backgrounds", "csd"]: self.remove_css_class(cl)
-
-        code_key = str(weather_code)
-        if is_day == 0:
-            code_key += "n"
-        css_class = bg_css.get(code_key, "")
-        if css_class:
-            self.add_css_class(css_class)
+        # classes that are in the target but not currently on the widget. These need to be added.
+        for cls in target - current:
+            self.add_css_class(cls)
 
     def _setup_auto_refresh(self):
         if self._auto_refresh_timer_id is not None:

@@ -425,9 +425,8 @@
 
 /* Compact Mode Redesign */
 .compact-container {
-    border-radius: 13px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    color: white;
+    /* border-radius: 13px; */
 }
 
 .compact-city {
@@ -443,7 +442,6 @@
 .compact-condition-text {
     font-size: 1rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
 }
 
 .compact-detail-label {
@@ -474,7 +472,6 @@
 .compact-temp {
     font-size: 5rem;
     font-weight: 800;
-    color: white;
 }
 
 .compact-raindrops {
@@ -482,5 +479,9 @@
 }
 
 .compact-window {
+    border-radius: 13px;
+}
+
+.dynamic-bg {
     background-color: transparent;
 }

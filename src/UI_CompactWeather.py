@@ -57,6 +57,9 @@ class CompactWeather(Gtk.Overlay):
                 city_name = city.get("name")
                 break
         
+        if len(city_name) > 11:
+            city_name = city_name[:8] + "..."
+
         lbl_city = Gtk.Label(label=city_name)
         lbl_city.set_halign(Gtk.Align.START)
         lbl_city.add_css_class("text-2a")
@@ -189,10 +192,12 @@ class CompactWeatherWindow(Adw.ApplicationWindow):
         super().__init__(application=app, **kwargs)
         self.on_back_to_normal = on_back_to_normal
         self.set_title(_("Mousam Compact"))
-        self.add_css_class("compact-window")
         self.set_default_size(280, 220)
         self.set_resizable(False)
         self.set_decorated(False)
+        self.add_css_class("compact-window")
+        if settings.is_using_dynamic_bg:
+            self.add_css_class("dynamic-bg")
         
         # 1. Create a WindowHandle to make the whole window draggable
         handle = Gtk.WindowHandle()
