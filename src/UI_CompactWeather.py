@@ -41,6 +41,18 @@ class CompactWeather(Gtk.Overlay):
         self._start_polling()
         return GLib.SOURCE_CONTINUE
 
+    def _cleanup_ui(self):
+        """Remove old content overlays so fresh UI can be drawn."""
+        # Collect overlays to remove (skip the back button and base stack)
+        to_remove = []
+        child = self.get_first_child()
+        while child is not None:
+            if child is not self.stack and child is not self.btn_back:
+                to_remove.append(child)
+            child = child.get_next_sibling()
+        for w in to_remove:
+            self.remove_overlay(w)
+
     def _trigger_fetch(self):
         from .utils import fetch_all_weather_data_async
         fetch_all_weather_data_async()
@@ -48,6 +60,7 @@ class CompactWeather(Gtk.Overlay):
     def _start_polling(self):
         """Begin polling for data, store timeout id."""
         if self._is_data_ready():
+            self._cleanup_ui()
             self._build_ui()
         else:
             self._trigger_fetch()
