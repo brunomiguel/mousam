@@ -208,8 +208,39 @@ class CompactWeather(Gtk.Overlay):
         wind_deg = data.winddirection_10m.get('data')
         wind_dir = get_wind_dir(wind_deg)
         
-        aqi = aq_data.get("current_us_aqi", "--") if aq_data else "--"
-        add_detail_row(_("AQI"), str(aqi), 4)
+        # AQI Row
+        lbl_aqi_label = Gtk.Label(label=_("AQI"))
+        lbl_aqi_label.set_halign(Gtk.Align.START)
+        lbl_aqi_label.add_css_class("compact-detail-label")
+        details_grid.attach(lbl_aqi_label, 0, 4, 1, 1)
+
+        aqi_stack = Gtk.Stack()
+        aqi_stack.set_halign(Gtk.Align.END)
+        aqi_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        details_grid.attach(aqi_stack, 1, 4, 1, 1)
+        
+        aqi_spinner = Adw.Spinner()
+        aqi_spinner.set_size_request(16, 16)
+        aqi_spinner.set_valign(Gtk.Align.CENTER)
+        aqi_stack.add_named(aqi_spinner, "loader")
+
+        lbl_aqi_val = Gtk.Label()
+        lbl_aqi_val.add_css_class("compact-detail-value")
+        aqi_stack.add_named(lbl_aqi_val, "content")
+
+        if aq_data:
+            lbl_aqi_val.set_label(str(aq_data.get("current_us_aqi", "--")))
+            aqi_stack.set_visible_child_name("content")
+        else:
+            aqi_stack.set_visible_child_name("loader")
+            def check_aqi():
+                from .CORE_weatherData import air_apllution_data as new_aq
+                if new_aq:
+                    lbl_aqi_val.set_label(str(new_aq.get("current_us_aqi", "--")))
+                    aqi_stack.set_visible_child_name("content")
+                    return False
+                return True
+            GLib.timeout_add(500, check_aqi)
         
         wind_speed = data.windspeed_10m.get('data')
         wind_speed_str = f"{wind_speed} {data.windspeed_10m.get('unit')}" if wind_speed is not None else "--"
