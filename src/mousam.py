@@ -41,10 +41,11 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         self.set_title("Mousam")
         self.set_default_size(settings.window_width, settings.window_height)
         self.connect("close-request", self._save_window_state)
+        self.connect("destroy", self._on_window_destroy)
 
         # State Tracking
-        self.added_cities= settings.added_cities
-        self.auto_refresh = AutoRefreshTimer(self._on_auto_refresh_tick)
+        self.added_cities = settings.added_cities
+        self._needs_render = False
 
         # --- UI Construction ---
         self._setup_actions()
@@ -55,10 +56,9 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         self._start_data_refresh(is_initial=True)
 
         # Auto-refresh setup
-        self.auto_refresh.setup()
-        settings.settings.connect(
+        settings.connect(
             "changed::auto-refresh-interval",
-            lambda *_: self.auto_refresh.setup(),
+            lambda *_: self.get_application().auto_refresh.setup(),
         )
 
     def _setup_ui(self):
@@ -174,10 +174,12 @@ class WeatherMainWindow(Adw.ApplicationWindow):
 
     def _on_data_fetch_success(self, is_auto=False):
         """Called on Main Thread after the worker has populated weatherData."""
-        self._render_weather_grid()
+        if self.get_visible():
+            self._render_weather_grid()
+        else:
+            self._needs_render = True
+            
         self._update_view_state("content")
-        if is_auto:
-            show_notification(self.get_application())
 
     # ================= UI Rendering =================
 
@@ -185,13 +187,14 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         """
         Now that fetching is done, we can safely import and read the data.
         """
-        # Lazy import inside the function to ensure we read the updated state
-        from .CORE_weatherData import current_weather_data as cw_data
-
         # Clear previous grid if exists
         child = self.main_stack.get_child_by_name("content")
         if child:
             self.main_stack.remove(child)
+
+        from .CORE_weatherData import current_weather_data as cw_data
+        if cw_data is None:
+            return
 
         # Dynamic Background
         w_code = cw_data.weathercode.get("data")
@@ -314,7 +317,8 @@ class WeatherMainWindow(Adw.ApplicationWindow):
                     state,
                 )
 
-        self.main_stack.set_visible_child_name(state)
+        if self.main_stack.get_child_by_name(state):
+            self.main_stack.set_visible_child_name(state)
 
     def _create_loader_page(self):
         spinner = Adw.Spinner()
@@ -388,18 +392,24 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         # Clear timezone cache (will be repopulated during fetch)
         local_time_data.clear()
 
-    def _on_auto_refresh_tick(self):
-        self._pre_refresh_cleanup()
-        self._start_data_refresh(is_auto=True)
-        return GLib.SOURCE_CONTINUE
 
     def _save_window_state(self, window):
-        self.auto_refresh.stop()
 
         width, height = window.get_default_size()
         settings.window_width = width
         settings.window_height = height
         settings.window_maximized = window.is_maximized()
+
+    def _on_window_destroy(self, *args):
+        app = self.get_application()
+        if app and hasattr(app, "main_window"):
+            app.main_window = None
+
+    def present(self):
+        if getattr(self, "_needs_render", False):
+            self._render_weather_grid()
+            self._needs_render = False
+        super().present()
 
     # --- Callbacks ---
     def _on_action_refresh(self, action, param):
@@ -410,16 +420,7 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         win.present()
 
     def _on_action_compact(self, action, param):
-        app = self.get_application()
-        bg_classes = self.get_css_classes()
-        compact_win = CompactWeatherWindow(app, bg_classes=bg_classes, on_back_to_normal=lambda: self._switch_to_normal(app, compact_win))
-        compact_win.present()
-        self.close()
-
-    def _switch_to_normal(self, app, compact_win):
-        main_win = WeatherMainWindow(application=app)
-        main_win.present()
-        compact_win.close()
+        self.get_application().activate_action("show-compact", None)
 
     def _on_action_preferences(self, action, param):
         win = WeatherPreferences(self)
