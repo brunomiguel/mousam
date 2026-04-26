@@ -9,6 +9,7 @@ from .UI_CompDrawPollutionBar import PollutionBar
 from .UI_CompDrawLineGraph import LineGraph
 from .settings import settings
 from .CORE_Helpers import get_time_difference
+from .configs import THRESHOLDS
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -43,18 +44,16 @@ class CardAirPollution:
     }
 
     def _get_pollutant_status_color(self, key, val):
-        
-        if key not in self.THRESHOLDS:
+        if key not in THRESHOLDS:
             return "accent"
             
-        for threshold, color in self.THRESHOLDS[key]:
+        for threshold, color in THRESHOLDS[key]:
             if val is not None and float(val) <= threshold:
                 return color
         return "error"
 
 
     def _get_nearest_time_index(self):
-        
         t_data = get_time_difference()
         target_time = t_data.get("target_time")
         timezone_str = t_data.get("timezone", "UTC")
@@ -211,8 +210,8 @@ class CardAirPollution:
                 row = Adw.ActionRow(title=name)
                 
                 # Recommended safe limit
-                if key in self.THRESHOLDS:
-                    safe_limit = self.THRESHOLDS[key][0][0]
+                if key in THRESHOLDS:
+                    safe_limit = THRESHOLDS[key][0][0]
                     row.set_subtitle(_("Safe limit: ≤ {0} {1}").format(safe_limit, unit))
 
                 # Format value
