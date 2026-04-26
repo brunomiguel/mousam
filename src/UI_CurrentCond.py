@@ -1,8 +1,8 @@
 import gi
 from gi.repository import Gtk
-from .constants import icons, condition
-from .config import settings
-from .utils import JsonProcessor
+from .CORE_Icons import icons, condition
+from .settings import settings
+from .CORE_Helpers import JsonProcessor
 from gettext import gettext as _, pgettext as C_
 
 
@@ -19,7 +19,8 @@ class CurrentCondition(Gtk.Grid):
         self.paint_ui()
 
     def paint_ui(self):
-        from .CORE_weatherData import current_weather_data as data
+        from .CORE_weatherData import weather_manager
+        data = weather_manager.current_weather
 
         # ========== left section ===========
         box_left = Gtk.Box(
@@ -34,9 +35,9 @@ class CurrentCondition(Gtk.Grid):
         box_left.append(condition_grid)
 
         # condition icon
-        weather_code = data.weathercode.get("data")
+        weather_code = data.weathercode.data
         condition_icon = icons[str(weather_code)]
-        if data.is_day.get("data") == 0:
+        if data.is_day.data == 0:
             condition_icon = icons[str(weather_code) + "n"]
 
         icon_main = Gtk.Image().new_from_file(condition_icon)
@@ -46,7 +47,7 @@ class CurrentCondition(Gtk.Grid):
 
         # Condition label
         cond_label = Gtk.Label(
-            label=condition[str(data.weathercode.get("data"))],
+            label=condition[str(data.weathercode.data)],
             halign=Gtk.Align.START,
             valign=Gtk.Align.END,
         )
@@ -56,7 +57,7 @@ class CurrentCondition(Gtk.Grid):
         # Condition temperature
         main_temp_label = Gtk.Label(
             label="{0:.0f} {1}".format(
-                data.temperature_2m.get("data"), data.temperature_2m.get("unit")
+                data.temperature_2m.data, data.temperature_2m.unit
             ),
             halign=Gtk.Align.START,
             valign=Gtk.Align.START,
@@ -95,7 +96,7 @@ class CurrentCondition(Gtk.Grid):
 
         feels_like_label = Gtk.Label(halign=Gtk.Align.END, margin_bottom=5)
         markup_text = _("Feels like • <b> {0} {1}</b>").format(
-            data.apparent_temperature.get("data"), data.apparent_temperature.get("unit")
+            data.apparent_temperature.data, data.apparent_temperature.unit
         )
         feels_like_label.set_markup(markup_text)
         feels_like_label.set_css_classes(["text-base", "font-medium"])

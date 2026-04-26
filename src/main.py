@@ -21,7 +21,8 @@ import os
 import sys
 import gi
 from .mousam import WeatherMainWindow
-from .config import settings
+from .settings import settings
+from .configs import APP_ID
 
 gi.require_version('Adw', '1')
 gi.require_version('Gtk', '4.0')
@@ -32,7 +33,7 @@ class WeatherApplication(Adw.Application):
     """The main application singleton class."""
 
     def __init__(self):
-        super().__init__(application_id='io.github.amit9838.mousam',
+        super().__init__(application_id=APP_ID,
                          flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
         self.create_action('quit', lambda *_: self.quit(), ['<primary>q'])
         self.main_window = None
@@ -46,11 +47,21 @@ class WeatherApplication(Adw.Application):
         self.create_action("show-normal", self._on_show_normal)
         
         # Centralized auto-refresh
-        from .utils import AutoRefreshTimer
+        from .CORE_GTKUtils import AutoRefreshTimer
         self.auto_refresh = AutoRefreshTimer(self._on_auto_refresh_tick)
+        
+        self.connect("window-removed", self._on_window_removed)
+
+    def do_shutdown(self):
+        self.auto_refresh.stop()
+        Adw.Application.do_shutdown(self)
+
+    def _on_window_removed(self, app, window):
+        # If any of the main windows are closed, quit the application
+        if window == self.main_window or window == self.compact_window:
+            self.quit()
 
     def do_activate(self):
-        global css_provider
         CSS_PATH = os.path.dirname(os.path.realpath(__file__)) + "/css/"
         css_provider = Gtk.CssProvider()
         Priority = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
@@ -69,7 +80,8 @@ class WeatherApplication(Adw.Application):
         self.auto_refresh.setup()
 
     def _on_auto_refresh_tick(self):
-        from .utils import fetch_all_weather_data_async, show_notification
+        from .CORE_Networking import fetch_all_weather_data_async
+        from .CORE_GTKUtils import show_notification
         
         def on_success():
             show_notification(self)

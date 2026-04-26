@@ -8,8 +8,9 @@ from gi.repository import Gtk, Adw, Gio, GLib
 from gettext import gettext as _, pgettext as C_
 
 # Module imports
-from .utils import create_toast, check_internet_connection, get_time_difference, local_time_data, AutoRefreshTimer, fetch_all_weather_data_async, show_notification
-from .constants import bg_css
+from .CORE_Helpers import check_internet_connection, local_time_data
+from .CORE_Networking import fetch_all_weather_data_async
+from .CORE_Icons import bg_css
 from .windowAbout import show_about_window
 from .windowPreferences import WeatherPreferences
 from .shortcutsDialog import ShortcutsDialog
@@ -24,13 +25,7 @@ from .UI_CardDayNight import CardDayNight
 from .UI_CardAirPollution import CardAirPollution
 from .UI_CompactWeather import CompactWeatherWindow
 
-from .config import settings
-from .CORE_weatherData import (
-    fetch_current_weather,
-    fetch_hourly_forecast,
-    fetch_daily_forecast,
-    fetch_current_air_pollution,
-)
+from .settings import settings
 
 
 class WeatherMainWindow(Adw.ApplicationWindow):
@@ -55,6 +50,10 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         # Initial Data Load
         self._start_data_refresh(is_initial=True)
 
+        # Centralized Data Handling
+        from .CORE_weatherData import weather_manager
+        weather_manager.connect("notify::is-ready", self._on_weather_manager_ready)
+        
         # Auto-refresh setup
         settings.connect(
             "changed::auto-refresh-interval",
@@ -154,7 +153,8 @@ class WeatherMainWindow(Adw.ApplicationWindow):
             self._update_view_state("welcome")
             return
 
-        if not check_internet_connection():
+        # Force internet check if manually triggered
+        if not check_internet_connection(force=not is_auto):
             self._update_view_state("error_no_internet")
             return
 
@@ -167,18 +167,20 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         self._update_view_state("loader")
         fetch_all_weather_data_async(
             on_success=lambda: self._on_data_fetch_success(is_auto),
-            on_error=lambda err: self._update_view_state("error_api")
+            on_error=lambda err: self._update_view_state("error_api", err)
         )
 
     # _worker_fetch_data moved to utils.fetch_all_weather_data_async
 
+    def _on_weather_manager_ready(self, *args):
+        """Called when data ready state changes."""
+        from .CORE_weatherData import weather_manager
+        if weather_manager.is_ready:
+            GLib.idle_add(self._render_weather_grid)
+
     def _on_data_fetch_success(self, is_auto=False):
         """Called on Main Thread after the worker has populated weatherData."""
-        if self.get_visible():
-            self._render_weather_grid()
-        else:
-            self._needs_render = True
-            
+        # Note: self._on_weather_manager_ready handles rendering via signals
         self._update_view_state("content")
 
     # ================= UI Rendering =================
@@ -192,13 +194,15 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         if child:
             self.main_stack.remove(child)
 
-        from .CORE_weatherData import current_weather_data as cw_data
-        if cw_data is None:
+        from .CORE_weatherData import weather_manager
+        if not weather_manager.is_ready:
             return
+        
+        cw_data = weather_manager.current_weather
 
         # Dynamic Background
-        w_code = cw_data.weathercode.get("data")
-        is_day = cw_data.is_day.get("data")
+        w_code = cw_data.weathercode.data
+        is_day = cw_data.is_day.data
         self._use_dynamic_bg(
             w_code if w_code is not None else 0,
             is_day if is_day is not None else 1
@@ -241,27 +245,28 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         # Wind
         wind_card = CardSquare(
             title="Wind",
-            main_val=cw_data.windspeed_10m.get("data"),
-            main_val_unit=cw_data.windspeed_10m.get("unit"),
-            desc=cw_data.windspeed_10m.get("level_str"),
-            sub_desc_heading=_("From"),
-            sub_desc=_("Northwest"),
-            text_up=_("N"),
-            visual_data=cw_data.winddirection_10m.get("data")
+            main_val=cw_data.windspeed_10m.data,
+            main_val_unit=cw_data.windspeed_10m.unit,
+            desc=cw_data.windspeed_10m.level_str,
+            sub_desc_heading=_("Direction"),
+            sub_desc=str(cw_data.winddirection_10m.data) + "°",
+            text_up="90",
+            text_low="0",
+            visual_data=cw_data.winddirection_10m.data
         ).card
         add_card(wind_card, 0, 0)
 
         # Humidity
         hum_card = CardSquare(
             title="Humidity",
-            main_val=cw_data.relativehumidity_2m.get("data"),
+            main_val=cw_data.relativehumidity_2m.data,
             main_val_unit="%",
-            desc=cw_data.relativehumidity_2m.get("level_str"),
+            desc=cw_data.relativehumidity_2m.level_str,
             sub_desc_heading=_("Dewpoint"),
-            sub_desc=f"{cw_data.dewpoint_2m.get('data')} {cw_data.dewpoint_2m.get('unit')}",
+            sub_desc=f"{cw_data.dewpoint_2m.data} {cw_data.dewpoint_2m.unit}",
             text_up="100",
             text_low="0",
-            visual_data=cw_data.relativehumidity_2m.get("data")
+            visual_data=cw_data.relativehumidity_2m.data
         ).card
         add_card(hum_card, 1, 0)
 
@@ -273,23 +278,24 @@ class WeatherMainWindow(Adw.ApplicationWindow):
             high *= 0.02953
         pres_card = CardSquare(
             title="Pressure",
-            main_val=cw_data.surface_pressure.get("data"),
-            main_val_unit=cw_data.surface_pressure.get("unit"),
-            desc=cw_data.surface_pressure.get("level_str"),
-            text_up=C_("pressure card", "High"),
-            text_low=C_("pressure card", "Low"),
-            visual_data=cw_data.surface_pressure.get("data")
+            main_val=cw_data.surface_pressure.data,
+            main_val_unit=cw_data.surface_pressure.unit,
+            desc=cw_data.surface_pressure.level_str,
+            text_up=str(int(high)),
+            text_low=str(int(low)),
+            visual_data=cw_data.surface_pressure.data
         ).card
         add_card(pres_card, 0, 1)
 
         # UV Index
         uv_card = CardSquare(
             title="UV Index",
-            main_val=cw_data.uv_index.get("data"),
-            desc=cw_data.uv_index.get("level_str"),
-            text_up=C_("uvindex card", "High"),
-            text_low=C_("uvindex card", "Low"),
-            visual_data=cw_data.uv_index.get("data"),
+            main_val=cw_data.uv_index.data,
+            main_val_unit="",
+            desc=cw_data.uv_index.level_str,
+            text_up="14",
+            text_low="0",
+            visual_data=cw_data.uv_index.data,
         ).card
         add_card(uv_card, 1, 1)
 
@@ -299,7 +305,7 @@ class WeatherMainWindow(Adw.ApplicationWindow):
 
         self.main_stack.add_named(grid, "content")
 
-    def _update_view_state(self, state: str):
+    def _update_view_state(self, state: str, message: str = ""):
         # Lazy Loading Views
         if self.main_stack.get_child_by_name(state) is None:
             if state == "loader":
@@ -308,16 +314,19 @@ class WeatherMainWindow(Adw.ApplicationWindow):
                 self.main_stack.add_named(self._create_welcome_page(), state)
             elif state == "error_no_internet":
                 self.main_stack.add_named(
-                    self._create_error_page("network-error-symbolic", _("No Internet")),
+                    self._create_error_page("network-error-symbolic", _("No Internet"), _("Please check your connection.")),
                     state,
                 )
             elif state == "error_api":
                 self.main_stack.add_named(
-                    self._create_error_page("computer-fail-symbolic", _("API Error")),
+                    self._create_error_page("computer-fail-symbolic", _("Fetch Error"), ""),
                     state,
                 )
 
-        if self.main_stack.get_child_by_name(state):
+        child = self.main_stack.get_child_by_name(state)
+        if child:
+            if state == "error_api" and message:
+                child.set_description(str(message))
             self.main_stack.set_visible_child_name(state)
 
     def _create_loader_page(self):
@@ -341,10 +350,19 @@ class WeatherMainWindow(Adw.ApplicationWindow):
         page.set_child(btn)
         return page
 
-    def _create_error_page(self, icon, title):
+    def _create_error_page(self, icon, title, description):
         page = Adw.StatusPage()
         page.set_icon_name(icon)
         page.set_title(title)
+        page.set_description(description)
+        
+        btn = Gtk.Button(label=_("Retry"))
+        btn.add_css_class("pill")
+        btn.add_css_class("suggested-action")
+        btn.connect("clicked", lambda x: self._start_data_refresh())
+        btn.set_halign(Gtk.Align.CENTER)
+        page.set_child(btn)
+        
         return page
 
     def _use_dynamic_bg(self, weather_code: int = 0, is_day: int = 1) -> None:

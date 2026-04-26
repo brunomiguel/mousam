@@ -18,10 +18,10 @@ gi.require_version("Adw", "1")
 from gi.repository import Gtk, GLib, Adw
 import threading
 
-from .constants import icons
-from .config import settings
-from .CORE_weatherData import fetch_hourly_forecast, fetch_daily_forecast
-from .utils import weak_connect
+from .CORE_Icons import icons
+from .settings import settings
+from .CORE_weatherData import weather_manager
+from .CORE_GTKUtils import weak_connect
 
 
 
@@ -197,17 +197,15 @@ class Forecast(Gtk.Grid):
         spinner.set_margin_top(self.SCROLLED_WINDOW_HEIGHT // 2)
         container.append(spinner)
 
-        def _fetch_data():
-            try:
-                # Import data modules lazily to avoid circular imports
-                daily_data = fetch_daily_forecast()
-                hourly_data = fetch_hourly_forecast()
-                GLib.idle_add(self._on_data_loaded, page, container, spinner, daily_data, hourly_data)
-            except Exception as e:
-                print(f"Error loading forecast data: {e}")
-                # Handle error UI if needed
-
-        threading.Thread(target=_fetch_data, daemon=True).start()
+        if weather_manager.is_ready:
+            self._on_data_loaded(page, container, spinner, weather_manager.daily_forecast, weather_manager.hourly_forecast)
+        else:
+            def _wait_for_data(mgr, pspec):
+                if mgr.is_ready:
+                    GLib.idle_add(self._on_data_loaded, page, container, spinner, mgr.daily_forecast, mgr.hourly_forecast)
+                    mgr.disconnect_by_func(_wait_for_data)
+            
+            weather_manager.connect("notify::is-ready", _wait_for_data)
 
     def _on_data_loaded(
         self,
@@ -279,22 +277,22 @@ class Forecast(Gtk.Grid):
         grid.set_css_classes(["bg-light-gray", "card-forecast-item"])
 
         # Extract common data
-        timestamp = data_source.time.get("data")[index]
+        timestamp = data_source.time.data[index]
         dt = datetime.fromtimestamp(timestamp)
 
         # Prepare label and temperatures
         if page == ForecastPage.WEEKLY:
             label_text = self._format_weekly_label(dt)
-            temp_max = data_source.temperature_2m_max.get("data")[index]
-            temp_min = data_source.temperature_2m_min.get("data")[index]
-            weather_code = data_source.weathercode.get("data")[index]
+            temp_max = data_source.temperature_2m_max.data[index]
+            temp_min = data_source.temperature_2m_min.data[index]
+            weather_code = data_source.weathercode.data[index]
         else:  # TOMORROW
             label_text = self._format_hourly_label(dt)
-            temp_max = data_source.temperature_2m.get("data")[index]
+            temp_max = data_source.temperature_2m.data[index]
             temp_min = None  # No min temp for hourly
-            weather_code = data_source.weathercode.get("data")[index]
+            weather_code = data_source.weathercode.data[index]
             # Adjust for night if needed
-            if hourly_data.is_day.get("data")[index] == 0:
+            if hourly_data.is_day.data[index] == 0:
                 weather_code = f"{weather_code}n"
 
         # Build the grid columns
@@ -394,7 +392,7 @@ class Forecast(Gtk.Grid):
             int: Index offset into the time array.
         """
         target_ts = self._get_next_midnight_timestamp()
-        time_series: List[float] = hourly_data.time.get("data")
+        time_series: List[float] = hourly_data.time.data
         for idx, ts in enumerate(time_series):
             if ts > target_ts:
                 return idx

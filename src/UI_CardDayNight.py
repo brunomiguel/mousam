@@ -6,11 +6,8 @@ from gi.repository import Gtk
 from gettext import gettext as _, pgettext as C_
 
 from .UI_CompDrawDayNight import DrawDayNight
-from .config import settings
-from .utils import (
-    get_cords,
-    get_time_difference,
-)
+from .settings import settings
+from .CORE_Helpers import get_time_difference
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -28,7 +25,8 @@ class CardDayNight:
         self.create_card()
 
     def get_sunset_sunrise_degree(self):
-        from .CORE_weatherData import daily_forecast_data as daily_data
+        from .CORE_weatherData import weather_manager
+        daily_data = weather_manager.daily_forecast
 
         t_data = get_time_difference()
         target_time = t_data.get("target_time")
@@ -36,12 +34,13 @@ class CardDayNight:
         tz = ZoneInfo(timezone_str)
 
         sunrise_ts, sunset_ts = 0, 0
-        for i, data in enumerate(daily_data.time.get("data")):
+        for i, data in enumerate(daily_data.time.data):
             # Check date using target timezone
-            date_ = int(datetime.fromtimestamp(data, tz=tz).strftime(r"%d"))
-            if date_ == datetime.now(tz).date().day:
-                sunrise_ts = daily_data.sunrise.get("data")[i]
-                sunset_ts = daily_data.sunset.get("data")[i]
+            dt = datetime.fromtimestamp(data, tz=tz)
+            current_time = datetime.now(tz)
+            if dt.date() == current_time.date():
+                sunrise_ts = daily_data.sunrise.data[i]
+                sunset_ts = daily_data.sunset.data[i]
                 break
 
         target_dt = datetime.fromtimestamp(target_time, tz=tz)

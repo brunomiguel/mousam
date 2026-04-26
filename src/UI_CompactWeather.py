@@ -1,7 +1,8 @@
 import gi
 from gi.repository import Gtk, Adw, GLib
-from .config import settings
-from .constants import icons, condition, bg_css
+from .settings import settings
+from .CORE_Icons import icons, condition, bg_css
+from .CORE_Helpers import check_internet_connection
 from gettext import gettext as _
 
 gi.require_version("Gtk", "4.0")
@@ -15,6 +16,7 @@ class CompactWeather(Gtk.Overlay):
         super().__init__(**kwargs)
         self.on_back_clicked = on_back_clicked
         self._poll_timeout_id = None    # store timeout for cleanup
+        self._clock_timeout_id = None   # store clock timeout for cleanup
         
         self.add_css_class("compact-container")
         self.set_valign(Gtk.Align.FILL)
@@ -42,7 +44,8 @@ class CompactWeather(Gtk.Overlay):
             self.remove_overlay(w)
 
     def _trigger_fetch(self, is_auto=False):
-        from .utils import fetch_all_weather_data_async, show_notification
+        from .CORE_Networking import fetch_all_weather_data_async
+        from .CORE_GTKUtils import show_notification
         
         def on_success():
             if is_auto:
@@ -51,14 +54,23 @@ class CompactWeather(Gtk.Overlay):
                     app = root.get_application()
                     if app:
                         show_notification(app)
+        
+        def on_error(err):
+            self._stop_polling()
+            self._show_error(err)
 
-        fetch_all_weather_data_async(on_success=on_success)
+        fetch_all_weather_data_async(on_success=on_success, on_error=on_error)
 
     def _start_polling(self, is_auto=False):
         """Begin polling for data, store timeout id."""
-        if self._is_data_ready():
+        from .CORE_weatherData import weather_manager
+        if weather_manager.is_ready:
             GLib.idle_add(self._build_ui)
         else:
+            if not check_internet_connection(force=not is_auto):
+                self._show_error(_("No Internet"))
+                return
+
             self._trigger_fetch(is_auto=is_auto)
             self._show_loader()
             self._poll_timeout_id = GLib.timeout_add(500, self._check_all_data_ready)
@@ -72,24 +84,40 @@ class CompactWeather(Gtk.Overlay):
             self.stack.add_named(spinner, "loader")
         self.stack.set_visible_child_name("loader")
 
-    def _is_data_ready(self):
-        from .CORE_weatherData import current_weather_data, air_apllution_data
-        import threading
-        if current_weather_data is None or air_apllution_data is None:
-            return False
 
-        # This checks for the race condition of the threads in mousam.py with "cwt" and "apt" tags
-        # If new data is actively being fetched, wait for it to finish
-        if any(t.name in ("cwt", "apt", "compact_fetch") for t in threading.enumerate()):
-            return False
-        return True
+    def _show_error(self, message):
+        is_net_error = str(message) == _("No Internet")
+        icon_name = "network-error-symbolic" if is_net_error else "computer-fail-symbolic"
+        
+        if not self.stack.get_child_by_name("error"):
+            icon = Gtk.Image.new_from_icon_name(icon_name)
+            icon.set_pixel_size(64)
+            icon.set_halign(Gtk.Align.CENTER)
+            icon.set_valign(Gtk.Align.CENTER)
+            icon.set_opacity(0.5)
+            icon.set_tooltip_text(str(message))
+            
+            # Click to retry (hidden interaction)
+            click = Gtk.GestureClick()
+            click.connect("pressed", lambda *args: self._start_polling())
+            icon.add_controller(click)
+            
+            self.stack.add_named(icon, "error")
+        else:
+            # Update icon and message if child already exists
+            icon = self.stack.get_child_by_name("error")
+            icon.set_from_icon_name(icon_name)
+            icon.set_tooltip_text(str(message))
+
+        self.stack.set_visible_child_name("error")
 
     def _check_all_data_ready(self):
         """Polling callback. Returns False to stop when data is ready."""
+        from .CORE_weatherData import weather_manager
         if self._poll_timeout_id is None:
             return False   # already stopped
 
-        if not self._is_data_ready():
+        if not weather_manager.is_ready:
             self._show_loader()
             return True   # continue polling
 
@@ -105,8 +133,11 @@ class CompactWeather(Gtk.Overlay):
 
     def _build_ui(self):
         self._cleanup_ui()
-        from .CORE_weatherData import current_weather_data as data, air_apllution_data as aq_data
-        from .utils import JsonProcessor, get_timezone_from_selected_city
+        self._stop_clock()
+        from .CORE_weatherData import weather_manager
+        data = weather_manager.current_weather
+        aq_data = weather_manager.air_pollution
+        from .CORE_Helpers import JsonProcessor, get_timezone_from_selected_city
         import datetime
         from zoneinfo import ZoneInfo
 
@@ -117,8 +148,8 @@ class CompactWeather(Gtk.Overlay):
 
         # Apply dynamic background to root window (async)
         if settings.is_using_dynamic_bg:
-            weather_code = data.weathercode.get("data", 0)
-            is_day = data.is_day.get("data", 1)
+            weather_code = data.weathercode.data if data.weathercode.data is not None else 0
+            is_day = data.is_day.data if data.is_day.data is not None else 1
             code_key = f"{weather_code}{'n' if is_day == 0 else ''}"
             css_class = bg_css.get(code_key, "")
             
@@ -161,7 +192,7 @@ class CompactWeather(Gtk.Overlay):
         grid.attach(lbl_city, 0, 0, 1, 1)
 
         # Condition
-        weather_code = data.weathercode.get("data", 0)
+        weather_code = data.weathercode.data
         lbl_cond = Gtk.Label(label=condition.get(str(weather_code), condition.get("0", "Unknown")))
         lbl_cond.set_halign(Gtk.Align.START)
         lbl_cond.add_css_class("text-xl")
@@ -185,7 +216,7 @@ class CompactWeather(Gtk.Overlay):
         grid.attach(spacer, 0, 2, 1, 1)
 
         # Temperature
-        temp_val = data.temperature_2m.get('data')
+        temp_val = data.temperature_2m.data
         temp_str = f"{temp_val:.0f}°" if temp_val is not None else "--°"
         lbl_temp = Gtk.Label(label=temp_str)
         lbl_temp.set_halign(Gtk.Align.START)
@@ -223,7 +254,7 @@ class CompactWeather(Gtk.Overlay):
         self.lbl_time_val.set_use_markup(True)
         self.lbl_time_val.set_margin_bottom(5)
 
-        from .utils import get_timezone_from_selected_city
+        from .CORE_Helpers import get_timezone_from_selected_city
         self.target_tz = ZoneInfo(get_timezone_from_selected_city())
         now = datetime.datetime.now(self.target_tz)
         date_str = now.strftime("%d %B")
@@ -238,7 +269,7 @@ class CompactWeather(Gtk.Overlay):
             t_str = now.strftime(fmt)
             self.lbl_time_val.set_markup(f"{d_str} • {t_str}")
             return True
-        GLib.timeout_add_seconds(1, update_clock)
+        self._clock_timeout_id = GLib.timeout_add_seconds(1, update_clock)
 
         # Wind
         def get_wind_dir(deg):
@@ -249,22 +280,22 @@ class CompactWeather(Gtk.Overlay):
             idx = int((deg + 11.25) / 22.5) % 16
             return dirs[idx]
 
-        wind_deg = data.winddirection_10m.get('data')
+        wind_deg = data.winddirection_10m.data
         wind_dir = get_wind_dir(wind_deg)
-        wind_speed = data.windspeed_10m.get('data')
-        wind_speed_str = f"{wind_speed} {data.windspeed_10m.get('unit')}" if wind_speed is not None else "--"
+        wind_speed = data.windspeed_10m.data
+        wind_speed_str = f"{wind_speed} {data.windspeed_10m.unit}" if wind_speed is not None else "--"
         add_detail_row(_("Wind"), f"{wind_speed_str} • {wind_dir}", 1)
 
-        hum = data.relativehumidity_2m.get('data')
+        hum = data.relativehumidity_2m.data
         hum_str = f"{hum} %" if hum is not None else "-- %"
         add_detail_row(_("Hum."), hum_str, 2)
 
-        pres = data.surface_pressure.get('data')
-        pres_str = f"{pres} {data.surface_pressure.get('unit')}" if pres is not None else "--"
+        pres = data.surface_pressure.data
+        pres_str = f"{pres} {data.surface_pressure.unit}" if pres is not None else "--"
         add_detail_row(_("Pres."), pres_str, 3)
 
         # AQI (data is guaranteed ready)
-        aqi_value = aq_data.get("current_us_aqi", "--") if aq_data else "--"
+        aqi_value = aq_data.current_us_aqi if aq_data and aq_data.current_us_aqi is not None else "--"
         add_detail_row(_("AQI"), str(aqi_value), 4)
 
         # Show content
@@ -303,8 +334,14 @@ class CompactWeather(Gtk.Overlay):
     def _on_hover_leave(self, controller):
         self.btn_back.set_visible(False)
 
+    def _stop_clock(self):
+        if self._clock_timeout_id:
+            GLib.source_remove(self._clock_timeout_id)
+            self._clock_timeout_id = None
+
     def dispose(self):
         self._stop_polling()
+        self._stop_clock()
         super().dispose()
 
 
