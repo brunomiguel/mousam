@@ -1,8 +1,8 @@
 from gettext import gettext as _
-from enum import IntEnum
 
 # --- Application Info ---
 APP_ID = "io.github.amit9838.mousam"
+VERSION = "2.0.0"
 
 # --- Networking & Timeout ---
 TIMEOUT = 15
@@ -31,7 +31,6 @@ HPA_TO_INHG = 0.02953
 # --- Application Preferences ---
 AUTO_REFRESH_OPTIONS = [
     (0, _("Off")),
-    (1, _("Every 1 minute")),
     (15, _("Every 15 minutes")),
     (30, _("Every 30 minutes")),
     (60, _("Every hour")),
